@@ -537,65 +537,18 @@
       return false;
     }
 
-    function findValueDeep(obj, keysToFind) {
-      if (!obj || typeof obj !== "object") return "";
-
-      const normalizedKeys = keysToFind.map(k => String(k).toLowerCase());
-      const stack = [obj];
-      const seen = new Set();
-
-      while (stack.length) {
-        const current = stack.pop();
-        if (!current || typeof current !== "object") continue;
-        if (seen.has(current)) continue;
-        seen.add(current);
-
-        for (const [key, value] of Object.entries(current)) {
-          const keyLower = String(key).toLowerCase();
-
-          if (normalizedKeys.includes(keyLower)) {
-            if (value !== undefined && value !== null && String(value).trim() !== "") {
-              return String(value).trim();
-            }
-          }
-
-          if (value && typeof value === "object") {
-            stack.push(value);
-          }
-        }
-      }
-
-      return "";
-    }
-
     function getCaller(match) {
-      return findValueDeep(match, ["writer", "caller"]);
+      return String(match?.writer ?? "").trim();
     }
 
     function isMatchNotStarted(match) {
-      const p1 = match?.matchPlayers?.[0] || {};
-      const p2 = match?.matchPlayers?.[1] || {};
-
-      const p1Points = String(p1?.points ?? "").trim().toLowerCase();
-      const p2Points = String(p2?.points ?? "").trim().toLowerCase();
-
-      const bothCheck =
-        p1Points.includes("check") &&
-        p2Points.includes("check");
-
-      const noScoresYet =
-        !p1?.lastScore &&
-        !p2?.lastScore &&
-        Number(p1?.dartsTotal ?? 0) === 0 &&
-        Number(p2?.dartsTotal ?? 0) === 0 &&
-        Number(p1?.legs ?? 0) === 0 &&
-        Number(p2?.legs ?? 0) === 0;
-
-      return bothCheck || noScoresYet;
-    }
-
-    function shouldShowCaller(match) {
-      return isMatchNotStarted(match);
+      return (
+        match?.statusComingSoon === true &&
+        match?.statusActive === false &&
+        match?.statusFinished === false &&
+        Number(match?.status ?? -1) === 0 &&
+        Number(match?.currentplayerIndex ?? -2) === -1
+      );
     }
 
     function playerPanel(player, isActive, winner, side) {
@@ -706,10 +659,10 @@
 
             <div class="players-wrap">
               ${
-                shouldShowCaller(match)
+                isMatchNotStarted(match)
                   ? `
                     <div class="prestart-panel">
-                      <div class="prestart-caller">${callerText ? `Caller: ${callerText}` : "Caller: -"}</div>
+                      <div class="prestart-caller">Caller: ${callerText || "-"}</div>
                     </div>
                   `
                   : `
