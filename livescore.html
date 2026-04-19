@@ -286,6 +286,10 @@
       color: var(--green);
     }
 
+    .score-main.orange {
+      color: #ff9f1a;
+    }
+
     .score-main.status {
       font-size: 3rem;
       letter-spacing: 0;
@@ -687,6 +691,9 @@
 
     function scoreColor(points) {
       const p = Number(points);
+      const orangeScores = new Set([159, 162, 163, 165, 166, 168, 169]);
+
+      if (!Number.isNaN(p) && orangeScores.has(p)) return "orange";
       if (!Number.isNaN(p) && p <= 170) return "green";
       return "";
     }
