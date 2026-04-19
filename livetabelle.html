@@ -1,0 +1,442 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Kalle's Flight Night – Live Tabelle</title>
+  <style>
+    :root {
+      --bg: #050b22;
+      --text: #ffffff;
+      --overlay-dark: rgba(3, 8, 24, 0.62);
+      --overlay-blue: rgba(21, 49, 130, 0.24);
+
+      --card-bg: rgba(8, 18, 46, 0.84);
+      --card-border: rgba(134, 170, 255, 0.18);
+      --panel-bg: rgba(25, 31, 45, 0.9);
+      --header-blue: linear-gradient(135deg, #2f63ff 0%, #4a7eff 100%);
+      --row-border: rgba(255,255,255,0.08);
+      --green: #0eb029;
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    html,
+    body {
+      margin: 0;
+      width: 100%;
+      min-height: 100%;
+      font-family: Arial, Helvetica, sans-serif;
+      background: var(--bg);
+    }
+
+    body {
+      min-height: 100vh;
+      color: var(--text);
+    }
+
+    .hero {
+      position: relative;
+      min-height: 100vh;
+      isolation: isolate;
+      background-image:
+        linear-gradient(180deg, var(--overlay-dark), rgba(4, 10, 30, 0.84)),
+        radial-gradient(circle at center, transparent 0%, rgba(2, 7, 22, 0.30) 55%, rgba(2, 7, 22, 0.74) 100%),
+        linear-gradient(135deg, var(--overlay-blue), transparent 45%),
+        url("kalles_flight_night_hintergrundbild.png");
+      background-size: cover;
+      background-position: center center;
+      background-repeat: no-repeat;
+      padding: 18px 16px 20px;
+    }
+
+    .shell {
+      width: min(1920px, 100%);
+      margin: 0 auto;
+      display: grid;
+      grid-template-rows: auto auto 1fr auto;
+      gap: 12px;
+      min-height: calc(100vh - 38px);
+    }
+
+    .hero-heading-wrap {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      padding-top: 2px;
+    }
+
+    .hero-heading {
+      margin: 0;
+      display: inline-block;
+      white-space: nowrap;
+      text-align: center;
+      text-transform: uppercase;
+      font-style: italic;
+      font-weight: 900;
+      letter-spacing: 0.04em;
+      line-height: 0.9;
+      font-size: clamp(1.8rem, 4.2vw, 4rem);
+      color: #ffffff;
+      padding: 0;
+      transform: skewX(-10deg) rotate(-2deg);
+      background: transparent;
+      border-radius: 0;
+      box-shadow: none;
+      text-shadow:
+        0 4px 14px rgba(0,0,0,0.45),
+        0 2px 0 rgba(255,255,255,0.06);
+    }
+
+    .top-nav {
+      display: flex;
+      justify-content: flex-start;
+      margin: 0;
+    }
+
+    .back-link {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 7px 13px;
+      border-radius: 999px;
+      text-decoration: none;
+      color: #ffffff;
+      font-size: 0.9rem;
+      font-weight: 700;
+      background: rgba(8, 18, 46, 0.72);
+      border: 1px solid rgba(134, 170, 255, 0.22);
+      backdrop-filter: blur(10px);
+      box-shadow:
+        0 8px 20px rgba(0, 0, 0, 0.22),
+        inset 0 1px 0 rgba(255,255,255,0.05);
+      transition:
+        transform 0.18s ease,
+        background 0.18s ease,
+        border-color 0.18s ease;
+    }
+
+    .back-link:hover {
+      transform: translateY(-1px);
+      background: rgba(33, 72, 190, 0.85);
+      border-color: rgba(170, 195, 255, 0.35);
+    }
+
+    .tables {
+      display: grid;
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+      gap: 14px;
+      align-items: start;
+    }
+
+    .table-card {
+      background: var(--card-bg);
+      border-radius: 20px;
+      overflow: hidden;
+      box-shadow:
+        0 16px 32px rgba(0, 0, 0, 0.28),
+        inset 0 1px 0 rgba(255,255,255,0.04);
+      border: 1px solid var(--card-border);
+      backdrop-filter: blur(12px);
+      position: relative;
+      min-width: 0;
+    }
+
+    .table-card::before {
+      content: "";
+      position: absolute;
+      inset: 0;
+      background: linear-gradient(180deg, rgba(255,255,255,0.03), transparent 22%);
+      pointer-events: none;
+    }
+
+    .table-head {
+      background: var(--header-blue);
+      padding: 10px 12px 9px;
+      text-align: center;
+    }
+
+    .table-title {
+      font-size: 1.02rem;
+      font-weight: 900;
+      line-height: 1.1;
+    }
+
+    .table-subtitle {
+      font-size: 0.72rem;
+      font-weight: 700;
+      opacity: 0.95;
+      margin-top: 2px;
+    }
+
+    .table-header,
+    .table-row {
+      display: grid;
+      grid-template-columns: 50px minmax(0, 25ch) 42px 42px 62px 54px;
+      align-items: center;
+      min-width: 0;
+    }
+
+    .table-header {
+      background: rgba(74, 126, 255, 0.18);
+      border-bottom: 1px solid var(--row-border);
+    }
+
+    .table-row {
+      background: var(--panel-bg);
+      border-bottom: 1px solid var(--row-border);
+    }
+
+    .table-row:nth-child(even) {
+      background: rgba(31, 43, 69, 0.92);
+    }
+
+    .table-row:last-child {
+      border-bottom: none;
+    }
+
+    .cell {
+      padding: 8px 6px;
+      border-right: 1px solid var(--row-border);
+      text-align: center;
+      font-size: 0.8rem;
+      line-height: 1.1;
+      min-width: 0;
+    }
+
+    .cell:last-child {
+      border-right: none;
+    }
+
+    .cell.header {
+      font-weight: 800;
+      color: #ffffff;
+      font-size: 0.74rem;
+      padding-top: 8px;
+      padding-bottom: 8px;
+    }
+
+    .cell.name {
+      text-align: left;
+      font-weight: 700;
+      max-width: 25ch;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .placement {
+      font-weight: 900;
+      color: #ffffff;
+    }
+
+    .promotion {
+      color: var(--green);
+      font-weight: 800;
+      font-size: 0.62rem;
+      margin-top: 2px;
+      line-height: 1.1;
+      white-space: normal;
+      overflow: visible;
+      text-overflow: unset;
+    }
+
+    .footer-status {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      gap: 12px;
+      color: #e5e8ef;
+      font-size: 0.88rem;
+      flex-wrap: wrap;
+      text-align: center;
+      padding-top: 2px;
+    }
+
+    .dot {
+      width: 9px;
+      height: 9px;
+      border-radius: 999px;
+      background: #81ffb1;
+      box-shadow: 0 0 12px rgba(129, 255, 177, 0.8);
+    }
+
+    .empty {
+      padding: 24px;
+      text-align: center;
+      color: #d0d4db;
+      background: rgba(7, 18, 50, 0.9);
+      border-radius: 20px;
+      grid-column: 1 / -1;
+    }
+
+    @media (max-width: 1200px) {
+      .tables {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+      }
+    }
+
+    @media (max-width: 760px) {
+      body {
+        overflow-x: hidden;
+      }
+
+      .hero {
+        padding: 16px 10px 20px;
+      }
+
+      .shell {
+        min-height: calc(100vh - 36px);
+      }
+
+      .hero-heading {
+        font-size: clamp(1.4rem, 8vw, 2.6rem);
+        white-space: normal;
+        line-height: 0.95;
+      }
+
+      .tables {
+        grid-template-columns: 1fr;
+        gap: 12px;
+      }
+
+      .table-card {
+        width: 100%;
+      }
+
+      .table-header,
+      .table-row {
+        grid-template-columns: 46px minmax(0, 25ch) 40px 40px 58px 52px;
+      }
+
+      .cell {
+        font-size: 0.78rem;
+      }
+
+      .cell.header {
+        font-size: 0.72rem;
+      }
+    }
+  </style>
+</head>
+<body>
+  <section class="hero" aria-label="Kalle's Flight Night Live Tabelle">
+    <div class="shell">
+      <div class="hero-heading-wrap">
+        <h1 class="hero-heading">Kalle's Flight Night</h1>
+      </div>
+
+      <div class="top-nav">
+        <a class="back-link" href="index.html">← Zurück</a>
+      </div>
+
+      <div class="tables" id="tables"></div>
+
+      <div class="footer-status">
+        <span class="dot"></span>
+        <span id="status-text">Tabellen werden geladen …</span>
+        <span>•</span>
+        <span id="last-updated">Noch kein Update</span>
+      </div>
+    </div>
+  </section>
+
+  <script>
+    const TABLE_URL = "/api/table";
+    const REFRESH_MS = 5000;
+
+    const tablesEl = document.getElementById("tables");
+    const statusTextEl = document.getElementById("status-text");
+    const lastUpdatedEl = document.getElementById("last-updated");
+
+    function formatNumber(value) {
+      if (value === null || value === undefined || value === "") return "-";
+      return value;
+    }
+
+    function renderTableGroup(group) {
+      const rows = (group.tableEntries || []).slice(0, 5);
+
+      return `
+        <article class="table-card">
+          <div class="table-head">
+            <div class="table-title">${group.name || "Gruppe"}</div>
+            <div class="table-subtitle">Live Tabelle</div>
+          </div>
+
+          <div class="table-header">
+            <div class="cell header">Pl.</div>
+            <div class="cell header name">Spieler</div>
+            <div class="cell header">Sp.</div>
+            <div class="cell header">S</div>
+            <div class="cell header">Legs</div>
+            <div class="cell header">Pkt.</div>
+          </div>
+
+          ${rows.map(row => {
+            const placeText = row.tablePlaceText === "Aufsteiger"
+              ? "Qualifikation Hauptrunde"
+              : (row.tablePlaceText || "");
+
+            return `
+              <div class="table-row">
+                <div class="cell placement">${row.placement || "-"}</div>
+                <div class="cell name" title="${row.participantName || "-"}">
+                  ${row.participantName || "-"}
+                  ${placeText ? `<div class="promotion">${placeText}</div>` : ""}
+                </div>
+                <div class="cell">${formatNumber(row.matchCount)}</div>
+                <div class="cell">${formatNumber(row.win)}</div>
+                <div class="cell">${formatNumber(row.legs1)}:${formatNumber(row.legs2)}</div>
+                <div class="cell">${formatNumber(row.points1)}</div>
+              </div>
+            `;
+          }).join("")}
+        </article>
+      `;
+    }
+
+    async function loadTables() {
+      try {
+        statusTextEl.textContent = "Tabellen werden geladen …";
+
+        const response = await fetch(TABLE_URL, {
+          headers: {
+            Accept: "application/json"
+          }
+        });
+
+        const text = await response.text();
+        const json = JSON.parse(text);
+
+        const groups = json?.tableInfo?.tableEntries || [];
+
+        if (!groups.length) {
+          tablesEl.innerHTML = `
+            <div class="empty">Keine Tabellen gefunden.</div>
+          `;
+          statusTextEl.textContent = "Keine Tabellen gefunden";
+          lastUpdatedEl.textContent = `Letztes Update: ${new Date().toLocaleTimeString("de-DE")}`;
+          return;
+        }
+
+        tablesEl.innerHTML = groups.map(renderTableGroup).join("");
+        statusTextEl.textContent = `${groups.length} Tabellen geladen`;
+        lastUpdatedEl.textContent = `Letztes Update: ${new Date().toLocaleTimeString("de-DE")}`;
+      } catch (error) {
+        statusTextEl.textContent = "Tabellen konnten nicht geladen werden";
+        lastUpdatedEl.textContent = error.message;
+
+        tablesEl.innerHTML = `
+          <div class="empty">Fehler beim Laden der Tabellen.<br>${error.message}</div>
+        `;
+      }
+    }
+
+    loadTables();
+    setInterval(loadTables, REFRESH_MS);
+  </script>
+</body>
+</html>

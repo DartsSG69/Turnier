@@ -1,0 +1,665 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Kalle's Flight Night – Live Boards</title>
+  <style>
+    :root {
+      --bg: #050b22;
+      --text: #ffffff;
+      --shadow: rgba(0, 0, 0, 0.55);
+      --overlay-dark: rgba(3, 8, 24, 0.62);
+      --overlay-blue: rgba(21, 49, 130, 0.24);
+
+      --card-bg: rgba(8, 18, 46, 0.84);
+      --card-border: rgba(134, 170, 255, 0.18);
+      --panel-bg: rgba(25, 31, 45, 0.9);
+      --panel-bg-2: rgba(48, 58, 78, 0.92);
+      --header-blue: linear-gradient(135deg, #2f63ff 0%, #4a7eff 100%);
+      --green: #00e05a;
+      --score-white: #ffffff;
+      --muted: #d0d8eb;
+      --dart-line: rgba(195, 208, 240, 0.28);
+      --accent-border: #4f80ff;
+      --winner: #ffd54a;
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    html,
+    body {
+      margin: 0;
+      width: 100%;
+      min-height: 100%;
+      font-family: Arial, Helvetica, sans-serif;
+      background: var(--bg);
+    }
+
+    body {
+      min-height: 100vh;
+      color: var(--text);
+    }
+
+    .hero {
+      position: relative;
+      min-height: 100vh;
+      isolation: isolate;
+      background-image:
+        linear-gradient(180deg, var(--overlay-dark), rgba(4, 10, 30, 0.84)),
+        radial-gradient(circle at center, transparent 0%, rgba(2, 7, 22, 0.30) 55%, rgba(2, 7, 22, 0.74) 100%),
+        linear-gradient(135deg, var(--overlay-blue), transparent 45%),
+        url("kalles_flight_night_hintergrundbild.png");
+      background-size: cover;
+      background-position: center center;
+      background-repeat: no-repeat;
+      padding: 28px 22px 40px;
+    }
+
+    .shell {
+      width: min(1800px, 100%);
+      margin: 0 auto;
+      display: grid;
+      gap: 22px;
+      align-content: start;
+      min-height: calc(100vh - 80px);
+    }
+
+    .hero-heading-wrap {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      padding-top: 8px;
+    }
+
+    .hero-heading {
+      margin: 0;
+      display: inline-block;
+      white-space: nowrap;
+      text-align: center;
+      text-transform: uppercase;
+      font-style: italic;
+      font-weight: 900;
+      letter-spacing: 0.04em;
+      line-height: 0.9;
+      font-size: clamp(2.4rem, 6.4vw, 5.8rem);
+      color: #ffffff;
+      padding: 0;
+      transform: skewX(-10deg) rotate(-2deg);
+      background: transparent;
+      border-radius: 0;
+      box-shadow: none;
+      text-shadow:
+        0 4px 14px rgba(0,0,0,0.45),
+        0 2px 0 rgba(255,255,255,0.06);
+    }
+
+    .top-nav {
+      display: flex;
+      justify-content: flex-start;
+      margin-top: 6px;
+      margin-bottom: 6px;
+    }
+
+    .back-link {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 8px 14px;
+      border-radius: 999px;
+      text-decoration: none;
+      color: #ffffff;
+      font-size: 1.95 rem;
+      font-weight: 700;
+      background: rgba(8, 18, 46, 0.72);
+      border: 1px solid rgba(134, 170, 255, 0.22);
+      backdrop-filter: blur(10px);
+      box-shadow:
+        0 8px 20px rgba(0, 0, 0, 0.22),
+        inset 0 1px 0 rgba(255,255,255,0.05);
+      transition:
+        transform 0.18s ease,
+        background 0.18s ease,
+        border-color 0.18s ease;
+    }
+
+    .back-link:hover {
+      transform: translateY(-1px);
+      background: rgba(33, 72, 190, 0.85);
+      border-color: rgba(170, 195, 255, 0.35);
+    }
+
+    .boards {
+      display: grid;
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+      gap: 18px;
+      align-items: start;
+      margin-top: 28px;
+    }
+
+    .board-card {
+      background: var(--card-bg);
+      border-radius: 24px;
+      overflow: hidden;
+      box-shadow:
+        0 18px 40px rgba(0, 0, 0, 0.32),
+        inset 0 1px 0 rgba(255,255,255,0.04);
+      border: 1px solid var(--card-border);
+      backdrop-filter: blur(12px);
+      position: relative;
+    }
+
+    .board-card::before {
+      content: "";
+      position: absolute;
+      inset: 0;
+      background: linear-gradient(180deg, rgba(255,255,255,0.03), transparent 22%);
+      pointer-events: none;
+    }
+
+    .board-top {
+      background: var(--header-blue);
+      display: grid;
+      grid-template-columns: 1fr auto 1fr;
+      align-items: center;
+      padding: 10px 14px 8px;
+      min-height: 58px;
+      gap: 12px;
+      box-shadow: inset 0 -1px 0 rgba(255,255,255,0.12);
+    }
+
+    .board-top-left {
+      font-size: 0.95rem;
+      font-weight: 800;
+      justify-self: start;
+    }
+
+    .board-top-center {
+      text-align: center;
+      line-height: 1.05;
+    }
+
+    .group-name {
+      font-size: 1rem;
+      font-weight: 800;
+    }
+
+    .mode-name {
+      font-size: 0.78rem;
+      font-weight: 700;
+      opacity: 0.96;
+    }
+
+    .board-top-right {
+      justify-self: end;
+      font-size: 1.2rem;
+      line-height: 1;
+      font-weight: 700;
+      opacity: 0.95;
+    }
+
+    .players-wrap {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      background: transparent;
+    }
+
+    .player-panel {
+      position: relative;
+      min-height: 148px;
+      padding: 14px 14px 10px;
+      border-right: 1px solid rgba(255,255,255,0.08);
+      background: var(--panel-bg);
+    }
+
+    .player-panel:last-child {
+      border-right: none;
+    }
+
+    .player-panel.active {
+      box-shadow: inset 0 0 0 2px var(--accent-border);
+      z-index: 1;
+      background:
+        linear-gradient(180deg, rgba(79,128,255,0.14), rgba(79,128,255,0.04)),
+        var(--panel-bg);
+    }
+
+    .player-name {
+      text-align: center;
+      font-size: 1rem;
+      font-weight: 800;
+      line-height: 1.15;
+      margin-bottom: 10px;
+      min-height: 38px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .winner-label {
+      text-align: center;
+      margin-top: -2px;
+      margin-bottom: 8px;
+      font-size: 1.05rem;
+      font-weight: 900;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      color: var(--winner);
+      min-height: 24px;
+      text-shadow: 0 0 12px rgba(255, 213, 74, 0.28);
+    }
+
+    .score-row {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 14px;
+      min-height: 58px;
+    }
+
+    .last-score {
+      font-size: 1.1rem;
+      line-height: 1;
+      font-weight: 800;
+      color: #d9dde5;
+      min-width: 34px;
+      text-align: center;
+    }
+
+    .score-main {
+      font-size: 3rem;
+      line-height: 1;
+      font-weight: 900;
+      color: var(--score-white);
+      letter-spacing: -0.04em;
+      text-shadow: 0 3px 12px rgba(0,0,0,0.22);
+    }
+
+    .score-main.green {
+      color: var(--green);
+    }
+
+    .dart-values {
+      position: relative;
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      align-items: center;
+      min-height: 58px;
+      margin-top: 2px;
+      text-align: center;
+      gap: 0;
+      padding-top: 0;
+    }
+
+    .dart-values::before,
+    .dart-values::after {
+      content: "";
+      position: absolute;
+      top: 50%;
+      width: 1px;
+      height: 34px;
+      background: var(--dart-line);
+      transform: translateY(-50%);
+    }
+
+    .dart-values::before {
+      left: 33.3333%;
+      transform: translate(-50%, -50%);
+    }
+
+    .dart-values::after {
+      left: 66.6666%;
+      transform: translate(-50%, -50%);
+    }
+
+    .dart {
+      font-size: 1.22rem;
+      font-weight: 900;
+      color: #eef2fa;
+      line-height: 1;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      min-height: 40px;
+      padding: 0 4px 6px;
+    }
+
+    .stats-wrap {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      background: var(--panel-bg-2);
+      border-top: 1px solid rgba(255,255,255,0.08);
+    }
+
+    .stats-side {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      text-align: center;
+      padding: 12px 8px 14px;
+      gap: 6px;
+    }
+
+    .stats-side.left {
+      border-right: 1px solid rgba(255,255,255,0.08);
+    }
+
+    .stat {
+      display: grid;
+      gap: 4px;
+    }
+
+    .stat-label {
+      font-size: 0.82rem;
+      font-weight: 700;
+      color: #ffffff;
+      opacity: 0.95;
+    }
+
+    .stat-value {
+      font-size: 0.98rem;
+      font-weight: 800;
+      color: #ffffff;
+    }
+
+    .footer-status {
+      margin-top: auto;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      gap: 14px;
+      color: #e5e8ef;
+      font-size: 0.95rem;
+      flex-wrap: wrap;
+      text-align: center;
+      padding: 12px 16px 0;
+    }
+
+    .dot {
+      width: 10px;
+      height: 10px;
+      border-radius: 999px;
+      background: #81ffb1;
+      box-shadow: 0 0 12px rgba(129, 255, 177, 0.8);
+    }
+
+    .empty {
+      padding: 28px;
+      text-align: center;
+      color: #d0d4db;
+      background: rgba(7, 18, 50, 0.9);
+      border-radius: 20px;
+      grid-column: 1 / -1;
+    }
+
+    @media (max-width: 1600px) {
+      .boards {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+      }
+    }
+
+    @media (max-width: 900px) {
+      .boards {
+        grid-template-columns: 1fr;
+      }
+
+      .hero {
+        padding: 20px 12px 28px;
+      }
+
+      .hero-heading {
+        font-size: clamp(1.8rem, 9vw, 3.4rem);
+        white-space: normal;
+        line-height: 0.95;
+      }
+
+      .boards {
+        margin-top: 20px;
+      }
+    }
+  </style>
+</head>
+<body>
+  <section class="hero" aria-label="Kalle's Flight Night Live Boards">
+    <div class="shell">
+      <div class="hero-heading-wrap">
+        <h1 class="hero-heading">Live Scoring</h1>
+      </div>
+
+      <div class="top-nav">
+        <a class="back-link" href="index.html">← Zurück</a>
+      </div>
+
+      <div class="boards" id="boards"></div>
+
+      <div class="footer-status">
+        <span class="dot"></span>
+        <span id="status-text">Live-Daten werden geladen …</span>
+        <span>•</span>
+        <span id="last-updated">Noch kein Update</span>
+      </div>
+    </div>
+  </section>
+
+  <script>
+    const EVENT_URL = "/api/boards";
+    const REFRESH_MS = 3000;
+
+    const boardsEl = document.getElementById("boards");
+    const statusTextEl = document.getElementById("status-text");
+    const lastUpdatedEl = document.getElementById("last-updated");
+
+    function formatTimestamp(value) {
+      if (!value) return "Kein Zeitstempel";
+      const date = new Date(value);
+      if (Number.isNaN(date.getTime())) return value;
+      return new Intl.DateTimeFormat("de-DE", {
+        hour: "2-digit",
+        minute: "2-digit",
+        second: "2-digit"
+      }).format(date);
+    }
+
+    function formatAvg(player) {
+      if (typeof player?.avg === "number") return player.avg.toFixed(1);
+      if (typeof player?.avgScore === "number") return player.avgScore.toFixed(1);
+
+      const dartsTotal = Number(player?.dartsTotal ?? 0);
+      const scoreTotal = Number(player?.scoreTotal ?? 0);
+
+      if (dartsTotal > 0) {
+        return ((scoreTotal / dartsTotal) * 3).toFixed(1);
+      }
+
+      return "0.0";
+    }
+
+    function getDartValues(player) {
+      const darts = [player?.dart1, player?.dart2, player?.dart3];
+      if (darts.some(v => v !== undefined && v !== null && v !== "")) {
+        return darts.map(v => (v === undefined || v === null || v === "" ? "" : String(v)));
+      }
+      return ["", "", ""];
+    }
+
+    function getLastScore(player) {
+      if (player?.lastScore !== undefined && player?.lastScore !== null) {
+        return String(player.lastScore);
+      }
+      return "";
+    }
+
+    function scoreColor(points) {
+      const p = Number(points);
+      if (!Number.isNaN(p) && p <= 170) return "green";
+      return "";
+    }
+
+    function isWinner(player, match) {
+      if (!player) return false;
+
+      if (player?.winner === true || player?.isWinner === true) {
+        return true;
+      }
+
+      if (match?.statusFinished && Number(player?.legs ?? 0) > 0) {
+        const p1 = match?.matchPlayers?.[0]?.legs ?? 0;
+        const p2 = match?.matchPlayers?.[1]?.legs ?? 0;
+        const maxLegs = Math.max(Number(p1), Number(p2));
+        return Number(player?.legs ?? 0) === maxLegs && maxLegs > 0;
+      }
+
+      return false;
+    }
+
+    function playerPanel(player, isActive, winner, side) {
+      const darts = getDartValues(player);
+      const points = player?.points ?? "-";
+      const lastScore = getLastScore(player);
+
+      const scoreMarkup = side === "left"
+        ? `
+          <div class="score-row">
+            <div class="last-score">${lastScore || "&nbsp;"}</div>
+            <div class="score-main ${scoreColor(points)}">${points}</div>
+          </div>
+        `
+        : `
+          <div class="score-row">
+            <div class="score-main ${scoreColor(points)}">${points}</div>
+            <div class="last-score">${lastScore || "&nbsp;"}</div>
+          </div>
+        `;
+
+      return `
+        <div class="player-panel ${isActive ? "active" : ""}">
+          <div class="player-name">${player?.playerName ?? "Unbekannt"}</div>
+          <div class="winner-label">${winner ? "Sieger" : "&nbsp;"}</div>
+
+          ${scoreMarkup}
+
+          <div class="dart-values">
+            <div class="dart">${darts[0] || "&nbsp;"}</div>
+            <div class="dart">${darts[1] || "&nbsp;"}</div>
+            <div class="dart">${darts[2] || "&nbsp;"}</div>
+          </div>
+        </div>
+      `;
+    }
+
+    function statsSide(player, order = "left") {
+      const darts = player?.dartsTotal ?? player?.darts ?? 0;
+      const avg = formatAvg(player);
+      const legs = player?.legs ?? 0;
+
+      if (order === "left") {
+        return `
+          <div class="stats-side left">
+            <div class="stat">
+              <div class="stat-label">Darts</div>
+              <div class="stat-value">${darts}</div>
+            </div>
+            <div class="stat">
+              <div class="stat-label">Avg</div>
+              <div class="stat-value">${avg}</div>
+            </div>
+            <div class="stat">
+              <div class="stat-label">Legs</div>
+              <div class="stat-value">${legs}</div>
+            </div>
+          </div>
+        `;
+      }
+
+      return `
+        <div class="stats-side">
+          <div class="stat">
+            <div class="stat-label">Legs</div>
+            <div class="stat-value">${legs}</div>
+          </div>
+          <div class="stat">
+            <div class="stat-label">Avg</div>
+            <div class="stat-value">${avg}</div>
+          </div>
+          <div class="stat">
+            <div class="stat-label">Darts</div>
+            <div class="stat-value">${darts}</div>
+          </div>
+        </div>
+      `;
+    }
+
+    function renderBoards(matches) {
+      if (!Array.isArray(matches) || matches.length === 0) {
+        boardsEl.innerHTML = `
+          <div class="empty">Aktuell sind keine Live-Boards verfügbar.</div>
+        `;
+        return;
+      }
+
+      const sorted = [...matches].sort((a, b) => Number(a.board) - Number(b.board));
+
+      boardsEl.innerHTML = sorted.map(match => {
+        const p1 = match.matchPlayers?.[0] || {};
+        const p2 = match.matchPlayers?.[1] || {};
+        const activeIndex = match.currentplayerIndex;
+
+        return `
+          <article class="board-card">
+            <div class="board-top">
+              <div class="board-top-left">Board ${match.board ?? "-"}</div>
+
+              <div class="board-top-center">
+                <div class="group-name">${match.roundName ?? match.groupName ?? ""}</div>
+                <div class="mode-name">${match.mode ?? ""}</div>
+              </div>
+
+              <div class="board-top-right">☆</div>
+            </div>
+
+            <div class="players-wrap">
+              ${playerPanel(p1, activeIndex === 0, isWinner(p1, match), "left")}
+              ${playerPanel(p2, activeIndex === 1, isWinner(p2, match), "right")}
+            </div>
+
+            <div class="stats-wrap">
+              ${statsSide(p1, "left")}
+              ${statsSide(p2, "right")}
+            </div>
+          </article>
+        `;
+      }).join("");
+    }
+
+    async function loadBoards() {
+      try {
+        statusTextEl.textContent = "Live-Daten werden geladen …";
+
+        const response = await fetch(EVENT_URL, {
+          headers: {
+            Accept: "application/json"
+          }
+        });
+
+        const text = await response.text();
+        const json = JSON.parse(text);
+
+        renderBoards(json.data ?? []);
+        statusTextEl.textContent = `${json.data?.length ?? 0} Boards live`;
+        lastUpdatedEl.textContent = `Letztes Update: ${new Date().toLocaleTimeString("de-DE")}`;
+      } catch (error) {
+        statusTextEl.textContent = "Live-Daten konnten nicht geladen werden";
+        lastUpdatedEl.textContent = error.message;
+
+        boardsEl.innerHTML = `
+          <div class="empty">Fehler beim Laden der Live-Daten.<br>${error.message}</div>
+        `;
+      }
+    }
+
+    loadBoards();
+    setInterval(loadBoards, REFRESH_MS);
+  </script>
+</body>
+</html>
