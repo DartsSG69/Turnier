@@ -545,8 +545,8 @@
       let state = legDartsState.get(key);
 
       if (!state) {
-        const baselines = totals.map((total, i) => (points[i] >= 301 ? total : 0));
-        const visibleValues = totals.map((total, i) => Math.max(0, total - baselines[i]));
+        const baselines = totals.slice();
+        const visibleValues = totals.map(() => 0);
         const holdActive = statuses.some(Boolean) || (points.some(p => p === 0) && !nowAtLegStart);
         state = {
           baselines,
