@@ -543,6 +543,12 @@
         match?.Writer ??
         match?.caller ??
         match?.Caller ??
+        match?.callerName ??
+        match?.boardCaller ??
+        match?.meta?.writer ??
+        match?.meta?.caller ??
+        match?.match?.writer ??
+        match?.match?.caller ??
         ""
       );
     }
@@ -551,10 +557,25 @@
       const p1 = match?.matchPlayers?.[0] || {};
       const p2 = match?.matchPlayers?.[1] || {};
 
-      const p1Points = String(p1?.points ?? "").trim().toLowerCase();
-      const p2Points = String(p2?.points ?? "").trim().toLowerCase();
+      const p1PointsRaw = p1?.points ?? "";
+      const p2PointsRaw = p2?.points ?? "";
 
-      return p1Points === "check" && p2Points === "check";
+      const p1Points = String(p1PointsRaw).trim().toLowerCase();
+      const p2Points = String(p2PointsRaw).trim().toLowerCase();
+
+      const bothCheck =
+        p1Points.includes("check") &&
+        p2Points.includes("check");
+
+      const noScoresYet =
+        !p1?.lastScore &&
+        !p2?.lastScore &&
+        Number(p1?.dartsTotal ?? 0) === 0 &&
+        Number(p2?.dartsTotal ?? 0) === 0 &&
+        Number(p1?.legs ?? 0) === 0 &&
+        Number(p2?.legs ?? 0) === 0;
+
+      return bothCheck || noScoresYet;
     }
 
     function playerPanel(player, isActive, winner, side) {
@@ -664,16 +685,30 @@
 
             <div class="players-wrap">
               ${
-                isMatchNotStarted(match)
-                  ? `
-                    <div class="prestart-panel">
-                      <div class="prestart-caller">Caller: ${getCaller(match) || "-"}</div>
-                    </div>
-                  `
-                  : `
+                (() => {
+                  const callerText = getCaller(match);
+
+                  if (isMatchNotStarted(match) && callerText) {
+                    return `
+                      <div class="prestart-panel">
+                        <div class="prestart-caller">Caller: ${callerText}</div>
+                      </div>
+                    `;
+                  }
+
+                  if (isMatchNotStarted(match)) {
+                    return `
+                      <div class="prestart-panel">
+                        <div class="prestart-caller">Caller: -</div>
+                      </div>
+                    `;
+                  }
+
+                  return `
                     ${playerPanel(p1, activeIndex === 0, isWinner(p1, match), "left")}
                     ${playerPanel(p2, activeIndex === 1, isWinner(p2, match), "right")}
-                  `
+                  `;
+                })()
               }
             </div>
 
