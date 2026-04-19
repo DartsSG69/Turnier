@@ -1,8 +1,8 @@
 export default async function handler(req, res) {
   try {
-const url = `https://backend6.3k-darts.com/2k-backend6/api/v1/frontend/event/3973/phase/5708/round/0?t=${Date.now()}`;
-//const url = `https://backend5.3k-darts.com/2k-backend5/api/v1/frontend/event/19628?t=${Date.now()}`;
-//Score SG Turnier - 	const url = `https://backend6.3k-darts.com/2k-backend6/api/v1/frontend/event/983/phase/5529?t=${Date.now()}`;
+    const url = `https://backend6.3k-darts.com/2k-backend6/api/v1/frontend/event/3973/phase/5708/round/0?t=${Date.now()}`;
+    // const url = `https://backend5.3k-darts.com/2k-backend5/api/v1/frontend/event/19628?t=${Date.now()}`;
+    // Score SG Turnier - const url = `https://backend6.3k-darts.com/2k-backend6/api/v1/frontend/event/983/phase/5529?t=${Date.now()}`;
 
     const response = await fetch(url, {
       headers: {
@@ -32,8 +32,29 @@ const url = `https://backend6.3k-darts.com/2k-backend6/api/v1/frontend/event/397
       });
     }
 
+    const json = JSON.parse(text);
+
+    if (json?.tableInfo?.tableEntries?.length) {
+      json.tableInfo.tableEntries = json.tableInfo.tableEntries.map((group) => {
+        const updatedEntries = (group.tableEntries || []).map((row) => {
+          const isQualified = row?.styleClass === "place-ko-main";
+
+          return {
+            ...row,
+            isQualified,
+            tablePlaceText: isQualified ? "Qualifikation Hauptrunde" : ""
+          };
+        });
+
+        return {
+          ...group,
+          tableEntries: updatedEntries
+        };
+      });
+    }
+
     res.setHeader("Content-Type", "application/json; charset=utf-8");
-    res.status(200).send(text);
+    res.status(200).send(JSON.stringify(json));
   } catch (error) {
     res.status(500).json({ error: error.message });
   }
