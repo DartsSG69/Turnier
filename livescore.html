@@ -326,31 +326,18 @@
       padding: 0 4px 6px;
     }
 
-    .caller-only-panel {
+    .caller-panel {
       grid-column: 1 / -1;
       min-height: 148px;
       padding: 14px 14px 10px;
       background: var(--panel-bg);
       display: flex;
-      flex-direction: column;
       align-items: center;
       justify-content: center;
       text-align: center;
     }
 
-    .caller-only-title {
-      font-size: 1rem;
-      font-weight: 800;
-      line-height: 1.15;
-      margin-bottom: 10px;
-      min-height: 38px;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      opacity: 0.95;
-    }
-
-    .caller-only-text {
+    .caller-text {
       font-size: 3rem;
       line-height: 1;
       font-weight: 900;
@@ -451,7 +438,7 @@
         margin-top: 20px;
       }
 
-      .caller-only-text {
+      .caller-text {
         font-size: 2.4rem;
       }
     }
@@ -543,17 +530,11 @@
       return String(match?.writer ?? "").trim();
     }
 
-    function isMatchNotStarted(match) {
-      const status = Number(match?.status ?? -1);
-      const currentplayerIndex = Number(match?.currentplayerIndex ?? -999);
-      const statusComingSoon = match?.statusComingSoon === true;
-      const statusActive = match?.statusActive === true;
-      const statusFinished = match?.statusFinished === true;
-
+    function isMatchStarted(match) {
       return (
-        (statusComingSoon && !statusActive && !statusFinished) ||
-        status === 0 ||
-        currentplayerIndex === -1
+        Number(match?.status ?? 0) === 1 &&
+        match?.statusActive === true &&
+        Number(match?.currentplayerIndex ?? -1) >= 0
       );
     }
 
@@ -593,12 +574,9 @@
     }
 
     function callerPanel(match) {
-      const callerText = getCaller(match) || "-";
-
       return `
-        <div class="caller-only-panel">
-          <div class="caller-only-title">Noch nicht gestartet</div>
-          <div class="caller-only-text">Caller: ${callerText}</div>
+        <div class="caller-panel">
+          <div class="caller-text">Caller: ${getCaller(match) || "-"}</div>
         </div>
       `;
     }
@@ -659,7 +637,7 @@
         const p1 = match.matchPlayers?.[0] || {};
         const p2 = match.matchPlayers?.[1] || {};
         const activeIndex = match.currentplayerIndex;
-        const preStart = isMatchNotStarted(match);
+        const started = isMatchStarted(match);
 
         return `
           <article class="board-card">
@@ -676,12 +654,12 @@
 
             <div class="players-wrap">
               ${
-                preStart
-                  ? callerPanel(match)
-                  : `
+                started
+                  ? `
                     ${playerPanel(p1, activeIndex === 0, isWinner(p1, match), "left")}
                     ${playerPanel(p2, activeIndex === 1, isWinner(p2, match), "right")}
                   `
+                  : callerPanel(match)
               }
             </div>
 
