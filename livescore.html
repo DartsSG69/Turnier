@@ -204,6 +204,7 @@
       display: grid;
       grid-template-columns: 1fr 1fr;
       background: transparent;
+      position: relative;
     }
 
     .player-panel {
@@ -281,6 +282,30 @@
       color: var(--green);
     }
 
+    .caller-overlay {
+      position: absolute;
+      left: 0;
+      right: 0;
+      top: 62px;
+      min-height: 58px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 5;
+      pointer-events: none;
+    }
+
+    .caller-overlay-text {
+      font-size: 3rem;
+      line-height: 1;
+      font-weight: 900;
+      color: var(--score-white);
+      letter-spacing: -0.04em;
+      text-shadow: 0 3px 12px rgba(0,0,0,0.22);
+      text-align: center;
+      padding: 0 12px;
+    }
+
     .dart-values {
       position: relative;
       display: grid;
@@ -324,26 +349,6 @@
       justify-content: center;
       min-height: 40px;
       padding: 0 4px 6px;
-    }
-
-    .caller-panel {
-      grid-column: 1 / -1;
-      min-height: 148px;
-      padding: 14px 14px 10px;
-      background: var(--panel-bg);
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      text-align: center;
-    }
-
-    .caller-text {
-      font-size: 3rem;
-      line-height: 1;
-      font-weight: 900;
-      color: var(--score-white);
-      letter-spacing: -0.04em;
-      text-shadow: 0 3px 12px rgba(0,0,0,0.22);
     }
 
     .stats-wrap {
@@ -438,7 +443,7 @@
         margin-top: 20px;
       }
 
-      .caller-text {
+      .caller-overlay-text {
         font-size: 2.4rem;
       }
     }
@@ -488,7 +493,8 @@
       return "0.0";
     }
 
-    function getDartValues(player) {
+    function getDartValues(player, preStart) {
+      if (preStart) return ["", "", ""];
       const darts = [player?.dart1, player?.dart2, player?.dart3];
       if (darts.some(v => v !== undefined && v !== null && v !== "")) {
         return darts.map(v => (v === undefined || v === null || v === "" ? "" : String(v)));
@@ -496,14 +502,21 @@
       return ["", "", ""];
     }
 
-    function getLastScore(player) {
+    function getLastScore(player, preStart) {
+      if (preStart) return "";
       if (player?.lastScore !== undefined && player?.lastScore !== null) {
         return String(player.lastScore);
       }
       return "";
     }
 
-    function scoreColor(points) {
+    function getPoints(player, preStart) {
+      if (preStart) return "";
+      return player?.points ?? "-";
+    }
+
+    function scoreColor(points, preStart) {
+      if (preStart) return "";
       const p = Number(points);
       if (!Number.isNaN(p) && p <= 170) return "green";
       return "";
@@ -530,29 +543,30 @@
       return String(match?.writer ?? "").trim();
     }
 
-    function isMatchStarted(match) {
+    function isMatchNotStarted(match) {
       return (
-        Number(match?.status ?? 0) === 1 &&
-        match?.statusActive === true &&
-        Number(match?.currentplayerIndex ?? -1) >= 0
+        Number(match?.status ?? -1) === 0 &&
+        Number(match?.currentplayerIndex ?? -2) === -1 &&
+        match?.statusComingSoon === true &&
+        match?.statusActive === false
       );
     }
 
-    function playerPanel(player, isActive, winner, side) {
-      const darts = getDartValues(player);
-      const points = player?.points ?? "-";
-      const lastScore = getLastScore(player);
+    function playerPanel(player, isActive, winner, side, preStart) {
+      const darts = getDartValues(player, preStart);
+      const points = getPoints(player, preStart);
+      const lastScore = getLastScore(player, preStart);
 
       const scoreMarkup = side === "left"
         ? `
           <div class="score-row">
             <div class="last-score">${lastScore || "&nbsp;"}</div>
-            <div class="score-main ${scoreColor(points)}">${points}</div>
+            <div class="score-main ${scoreColor(points, preStart)}">${points || "&nbsp;"}</div>
           </div>
         `
         : `
           <div class="score-row">
-            <div class="score-main ${scoreColor(points)}">${points}</div>
+            <div class="score-main ${scoreColor(points, preStart)}">${points || "&nbsp;"}</div>
             <div class="last-score">${lastScore || "&nbsp;"}</div>
           </div>
         `;
@@ -569,14 +583,6 @@
             <div class="dart">${darts[1] || "&nbsp;"}</div>
             <div class="dart">${darts[2] || "&nbsp;"}</div>
           </div>
-        </div>
-      `;
-    }
-
-    function callerPanel(match) {
-      return `
-        <div class="caller-panel">
-          <div class="caller-text">Caller: ${getCaller(match) || "-"}</div>
         </div>
       `;
     }
@@ -637,7 +643,8 @@
         const p1 = match.matchPlayers?.[0] || {};
         const p2 = match.matchPlayers?.[1] || {};
         const activeIndex = match.currentplayerIndex;
-        const started = isMatchStarted(match);
+        const preStart = isMatchNotStarted(match);
+        const callerText = getCaller(match);
 
         return `
           <article class="board-card">
@@ -653,13 +660,17 @@
             </div>
 
             <div class="players-wrap">
+              ${playerPanel(p1, activeIndex === 0, isWinner(p1, match), "left", preStart)}
+              ${playerPanel(p2, activeIndex === 1, isWinner(p2, match), "right", preStart)}
+
               ${
-                started
+                preStart
                   ? `
-                    ${playerPanel(p1, activeIndex === 0, isWinner(p1, match), "left")}
-                    ${playerPanel(p2, activeIndex === 1, isWinner(p2, match), "right")}
+                    <div class="caller-overlay">
+                      <div class="caller-overlay-text">Caller: ${callerText || "-"}</div>
+                    </div>
                   `
-                  : callerPanel(match)
+                  : ``
               }
             </div>
 
