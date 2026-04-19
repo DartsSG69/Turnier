@@ -332,18 +332,9 @@
       padding: 14px 14px 10px;
       background: var(--panel-bg);
       display: flex;
-      flex-direction: column;
       align-items: center;
       justify-content: center;
       text-align: center;
-      gap: 12px;
-    }
-
-    .debug-text {
-      font-size: 1rem;
-      font-weight: 900;
-      letter-spacing: 0.08em;
-      color: #ffd54a;
     }
 
     .caller-text {
@@ -585,7 +576,6 @@
     function callerPanel(match) {
       return `
         <div class="caller-panel">
-          <div class="debug-text">DEBUG VERSION 20260419</div>
           <div class="caller-text">Caller: ${getCaller(match) || "-"}</div>
         </div>
       `;
@@ -669,9 +659,7 @@
                     ${playerPanel(p1, activeIndex === 0, isWinner(p1, match), "left")}
                     ${playerPanel(p2, activeIndex === 1, isWinner(p2, match), "right")}
                   `
-                  : `
-                    ${callerPanel(match)}
-                  `
+                  : callerPanel(match)
               }
             </div>
 
