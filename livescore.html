@@ -517,6 +517,7 @@
       const totalDarts = Number(player?.dartsTotal ?? player?.darts ?? 0);
       const currentLegs = Number(player?.legs ?? 0);
       const currentPoints = Number(player?.points ?? 0);
+      const winnerNow = isWinner(player, match);
       const key = getPlayerKey(match, player, index);
       const prev = legDartsState.get(key);
 
@@ -527,7 +528,8 @@
           baseline: initialBaseline,
           legs: currentLegs,
           points: currentPoints,
-          totalDarts
+          totalDarts,
+          frozenValue: winnerNow ? value : null
         });
         return value;
       }
@@ -535,23 +537,41 @@
       const legsIncreased = currentLegs > prev.legs;
       const pointsReset = currentPoints > prev.points && currentPoints >= 301;
       const totalWentBack = totalDarts < prev.totalDarts;
+      const completedLegValue = Math.max(0, totalDarts - prev.baseline);
+
+      if (winnerNow) {
+        const frozenValue = (legsIncreased || pointsReset || totalWentBack)
+          ? completedLegValue
+          : (prev.frozenValue ?? completedLegValue);
+
+        legDartsState.set(key, {
+          baseline: prev.baseline,
+          legs: currentLegs,
+          points: currentPoints,
+          totalDarts,
+          frozenValue
+        });
+        return frozenValue;
+      }
 
       if (legsIncreased || pointsReset || totalWentBack) {
         legDartsState.set(key, {
           baseline: totalDarts,
           legs: currentLegs,
           points: currentPoints,
-          totalDarts
+          totalDarts,
+          frozenValue: null
         });
         return 0;
       }
 
-      const value = Math.max(0, totalDarts - prev.baseline);
+      const value = completedLegValue;
       legDartsState.set(key, {
         ...prev,
         legs: currentLegs,
         points: currentPoints,
-        totalDarts
+        totalDarts,
+        frozenValue: null
       });
       return value;
     }
