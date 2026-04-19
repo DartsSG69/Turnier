@@ -1,6 +1,6 @@
 export default async function handler(req, res) {
   try {
-    const url = `https://backend5.3k-darts.com/2k-backend5/api/v1/frontend/event/19628/performance?t=${Date.now()}`;
+    const url = `https://backend6.3k-darts.com/2k-backend6/api/v1/frontend/event/3973/performance?t=${Date.now()}`;
 //Score SG Turnier - const url = `https://backend6.3k-darts.com/2k-backend6/api/v1/frontend/event/983/performance?t=${Date.now()}`;
 
     const response = await fetch(url, {
