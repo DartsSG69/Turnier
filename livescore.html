@@ -539,39 +539,22 @@
 
     function getCaller(match) {
       return (
-        match?.Caller ??
-        match?.caller ??
         match?.writer ??
+        match?.Writer ??
+        match?.caller ??
+        match?.Caller ??
         ""
       );
     }
 
     function isMatchNotStarted(match) {
-      if (match?.statusStarted === false) return true;
-      if (match?.started === false) return true;
-      if (match?.matchStarted === false) return true;
-
       const p1 = match?.matchPlayers?.[0] || {};
       const p2 = match?.matchPlayers?.[1] || {};
 
       const p1Points = String(p1?.points ?? "").trim().toLowerCase();
       const p2Points = String(p2?.points ?? "").trim().toLowerCase();
 
-      const bothShowCheck = p1Points === "check" && p2Points === "check";
-
-      const noDartsThrown =
-        Number(p1?.dartsTotal ?? 0) === 0 &&
-        Number(p2?.dartsTotal ?? 0) === 0;
-
-      const noLegsPlayed =
-        Number(p1?.legs ?? 0) === 0 &&
-        Number(p2?.legs ?? 0) === 0;
-
-      const noLastScore =
-        !p1?.lastScore &&
-        !p2?.lastScore;
-
-      return bothShowCheck || (noDartsThrown && noLegsPlayed && noLastScore);
+      return p1Points === "check" && p2Points === "check";
     }
 
     function playerPanel(player, isActive, winner, side) {
@@ -665,7 +648,6 @@
         const p1 = match.matchPlayers?.[0] || {};
         const p2 = match.matchPlayers?.[1] || {};
         const activeIndex = match.currentplayerIndex;
-        const caller = getCaller(match);
 
         return `
           <article class="board-card">
@@ -685,7 +667,7 @@
                 isMatchNotStarted(match)
                   ? `
                     <div class="prestart-panel">
-                      <div class="prestart-caller">Caller: ${caller || "-"}</div>
+                      <div class="prestart-caller">Caller: ${getCaller(match) || "-"}</div>
                     </div>
                   `
                   : `
