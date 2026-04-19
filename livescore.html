@@ -251,6 +251,11 @@
       text-shadow: 0 0 12px rgba(255, 213, 74, 0.28);
     }
 
+    .winner-label.check {
+      color: var(--green);
+      text-shadow: 0 0 12px rgba(0, 224, 90, 0.28);
+    }
+
     .score-row {
       display: flex;
       align-items: center;
@@ -518,6 +523,7 @@
       const currentLegs = Number(player?.legs ?? 0);
       const currentPoints = Number(player?.points ?? 0);
       const winnerNow = isWinner(player, match);
+      const checkNow = isCheck(player, match);
       const key = getPlayerKey(match, player, index);
       const prev = legDartsState.get(key);
 
@@ -529,19 +535,28 @@
           legs: currentLegs,
           points: currentPoints,
           totalDarts,
-          frozenValue: winnerNow ? value : null
+          frozenValue: winnerNow ? value : null,
+          pendingReset: checkNow,
+          pendingCompletedValue: checkNow ? value : null,
+          pendingBaseline: checkNow ? totalDarts : null
         });
         return value;
       }
 
       const legsIncreased = currentLegs > prev.legs;
-      const pointsReset = currentPoints > prev.points && currentPoints >= 301;
       const totalWentBack = totalDarts < prev.totalDarts;
+      const pointsReturnedToStart = currentPoints >= 301 && prev.points === 0;
+      const startedThrowingNewLeg = (
+        prev.pendingReset === true && (
+          totalDarts > Number(prev.pendingBaseline ?? prev.totalDarts ?? 0) ||
+          (currentPoints < prev.points && currentPoints < 301)
+        )
+      );
       const completedLegValue = Math.max(0, totalDarts - prev.baseline);
 
       if (winnerNow) {
-        const frozenValue = (legsIncreased || pointsReset || totalWentBack)
-          ? completedLegValue
+        const frozenValue = prev.pendingReset
+          ? (prev.pendingCompletedValue ?? completedLegValue)
           : (prev.frozenValue ?? completedLegValue);
 
         legDartsState.set(key, {
@@ -549,20 +564,72 @@
           legs: currentLegs,
           points: currentPoints,
           totalDarts,
-          frozenValue
+          frozenValue,
+          pendingReset: false,
+          pendingCompletedValue: null,
+          pendingBaseline: null
         });
         return frozenValue;
       }
 
-      if (legsIncreased || pointsReset || totalWentBack) {
+      if (totalWentBack) {
         legDartsState.set(key, {
           baseline: totalDarts,
           legs: currentLegs,
           points: currentPoints,
           totalDarts,
-          frozenValue: null
+          frozenValue: null,
+          pendingReset: false,
+          pendingCompletedValue: null,
+          pendingBaseline: null
         });
         return 0;
+      }
+
+      if (prev.pendingReset) {
+        const heldValue = prev.pendingCompletedValue ?? completedLegValue;
+
+        if (!startedThrowingNewLeg) {
+          legDartsState.set(key, {
+            ...prev,
+            legs: currentLegs,
+            points: currentPoints,
+            totalDarts,
+            pendingReset: true,
+            pendingCompletedValue: heldValue,
+            pendingBaseline: prev.pendingBaseline ?? prev.totalDarts
+          });
+          return heldValue;
+        }
+
+        const newBaseline = Number(prev.pendingBaseline ?? prev.totalDarts ?? totalDarts);
+        const newValue = Math.max(0, totalDarts - newBaseline);
+        legDartsState.set(key, {
+          baseline: newBaseline,
+          legs: currentLegs,
+          points: currentPoints,
+          totalDarts,
+          frozenValue: null,
+          pendingReset: false,
+          pendingCompletedValue: null,
+          pendingBaseline: null
+        });
+        return newValue;
+      }
+
+      if (checkNow || legsIncreased || pointsReturnedToStart) {
+        const heldValue = completedLegValue;
+        legDartsState.set(key, {
+          baseline: prev.baseline,
+          legs: currentLegs,
+          points: currentPoints,
+          totalDarts,
+          frozenValue: null,
+          pendingReset: true,
+          pendingCompletedValue: heldValue,
+          pendingBaseline: totalDarts
+        });
+        return heldValue;
       }
 
       const value = completedLegValue;
@@ -571,7 +638,10 @@
         legs: currentLegs,
         points: currentPoints,
         totalDarts,
-        frozenValue: null
+        frozenValue: null,
+        pendingReset: false,
+        pendingCompletedValue: null,
+        pendingBaseline: null
       });
       return value;
     }
@@ -599,10 +669,28 @@
       return false;
     }
 
-    function playerPanel(player, isActive, winner, side) {
+    function isCheck(player, match) {
+      if (!player || isWinner(player, match)) return false;
+      if (player?.check === true || player?.isCheck === true) return true;
+      return Number(player?.points ?? -1) === 0;
+    }
+
+    function getStatusLabel(player, match) {
+      if (isWinner(player, match)) {
+        return { text: "Sieger", className: "" };
+      }
+      if (isCheck(player, match)) {
+        return { text: "Check", className: "check" };
+      }
+      return { text: "&nbsp;", className: "" };
+    }
+
+    function playerPanel(player, isActive, winner, side, match) {
       const darts = getDartValues(player);
       const points = player?.points ?? "-";
       const lastScore = getLastScore(player);
+
+      const status = getStatusLabel(player, match);
 
       const scoreMarkup = side === "left"
         ? `
@@ -621,7 +709,7 @@
       return `
         <div class="player-panel ${isActive ? "active" : ""}">
           <div class="player-name">${player?.playerName ?? "Unbekannt"}</div>
-          <div class="winner-label">${winner ? "Sieger" : "&nbsp;"}</div>
+          <div class="winner-label ${status.className}">${status.text}</div>
 
           ${scoreMarkup}
 
@@ -705,8 +793,8 @@
             </div>
 
             <div class="players-wrap">
-              ${playerPanel(p1, activeIndex === 0, isWinner(p1, match), "left")}
-              ${playerPanel(p2, activeIndex === 1, isWinner(p2, match), "right")}
+              ${playerPanel(p1, activeIndex === 0, isWinner(p1, match), "left", match)}
+              ${playerPanel(p2, activeIndex === 1, isWinner(p2, match), "right", match)}
             </div>
 
             <div class="stats-wrap">
