@@ -454,23 +454,18 @@
 
       <div class="boards" id="boards"></div>
 
-      <div class="footer-status">
-        <span class="dot"></span>
-        <span id="status-text">Live-Daten werden geladen …</span>
-        <span>•</span>
-        <span id="last-updated">Noch kein Update</span>
-      </div>
+      <div class="footer-status" aria-hidden="true" style="display:none"></div>
     </div>
   </section>
 
   <script>
     const EVENT_URL = "/api/boards";
-    const REFRESH_MS = 3000;
+    const REFRESH_MS = 1000;
 
     const boardsEl = document.getElementById("boards");
-    const statusTextEl = document.getElementById("status-text");
-    const lastUpdatedEl = document.getElementById("last-updated");
     const legDartsState = new Map();
+    let lastRenderedPayload = "";
+    let hasLoadedOnce = false;
 
     function formatTimestamp(value) {
       if (!value) return "Kein Zeitstempel";
@@ -859,8 +854,6 @@
 
     async function loadBoards() {
       try {
-        statusTextEl.textContent = "Live-Daten werden geladen …";
-
         const response = await fetch(EVENT_URL, {
           headers: {
             Accept: "application/json"
@@ -869,14 +862,15 @@
 
         const text = await response.text();
         const json = JSON.parse(text);
+        const matches = json.data ?? [];
+        const payloadKey = JSON.stringify(matches);
 
-        renderBoards(json.data ?? []);
-        statusTextEl.textContent = `${json.data?.length ?? 0} Boards live`;
-        lastUpdatedEl.textContent = `Letztes Update: ${new Date().toLocaleTimeString("de-DE")}`;
+        if (!hasLoadedOnce || payloadKey !== lastRenderedPayload) {
+          renderBoards(matches);
+          lastRenderedPayload = payloadKey;
+          hasLoadedOnce = true;
+        }
       } catch (error) {
-        statusTextEl.textContent = "Live-Daten konnten nicht geladen werden";
-        lastUpdatedEl.textContent = error.message;
-
         boardsEl.innerHTML = `
           <div class="empty">Fehler beim Laden der Live-Daten.<br>${error.message}</div>
         `;
