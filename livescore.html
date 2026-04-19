@@ -700,7 +700,7 @@
     }
 
     function statsSide(match, player, index, order = "left") {
-      const darts = getPerLegDarts(match, player, index);
+      const darts = Number(player?.darts ?? 0);
       const avg = formatAvg(player);
       const legs = player?.legs ?? 0;
 
