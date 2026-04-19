@@ -1,3 +1,4 @@
+
 <!DOCTYPE html>
 <html lang="de">
 <head>
@@ -356,6 +357,10 @@
       return value;
     }
 
+    function isQualified(row) {
+      return row?.styleClass === "place-ko-main" || row?.isQualified === true;
+    }
+
     function renderTableGroup(group) {
       const rows = (group.tableEntries || []).slice(0, 5);
 
@@ -376,9 +381,7 @@
           </div>
 
           ${rows.map(row => {
-            const placeText = row.tablePlaceText === "Aufsteiger"
-              ? "Qualifikation Hauptrunde"
-              : (row.tablePlaceText || "");
+            const placeText = isQualified(row) ? "Qualifikation Hauptrunde" : "";
 
             return `
               <div class="table-row">
