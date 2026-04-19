@@ -537,6 +537,7 @@
 
       const totalDarts = Number(player?.dartsTotal ?? player?.darts ?? 0);
       const currentLegs = Number(player?.legs ?? 0);
+      const currentMatchLegs = (match?.matchPlayers || []).reduce((sum, p) => sum + Number(p?.legs ?? 0), 0);
       const currentPoints = Number(player?.points ?? 0);
       const winnerNow = isWinner(player, match);
       const checkNow = isCheck(player, match);
@@ -549,6 +550,7 @@
         legDartsState.set(key, {
           baseline: initialBaseline,
           legs: currentLegs,
+          matchLegs: currentMatchLegs,
           points: currentPoints,
           totalDarts,
           frozenValue: winnerNow ? value : null,
@@ -560,8 +562,10 @@
       }
 
       const legsIncreased = currentLegs > prev.legs;
+      const matchLegsIncreased = currentMatchLegs > Number(prev.matchLegs ?? prev.legs ?? 0);
       const totalWentBack = totalDarts < prev.totalDarts;
       const pointsReturnedToStart = currentPoints >= 301 && prev.points === 0;
+      const newLegStarted = matchLegsIncreased || pointsReturnedToStart;
       const startedThrowingNewLeg = (
         prev.pendingReset === true && (
           totalDarts > Number(prev.pendingBaseline ?? prev.totalDarts ?? 0) ||
@@ -578,6 +582,7 @@
         legDartsState.set(key, {
           baseline: prev.baseline,
           legs: currentLegs,
+          matchLegs: currentMatchLegs,
           points: currentPoints,
           totalDarts,
           frozenValue,
@@ -588,10 +593,29 @@
         return frozenValue;
       }
 
+
+      if (newLegStarted) {
+        const newBaseline = Number(prev.pendingBaseline ?? prev.totalDarts ?? totalDarts);
+        const newValue = Math.max(0, totalDarts - newBaseline);
+        legDartsState.set(key, {
+          baseline: newBaseline,
+          legs: currentLegs,
+          matchLegs: currentMatchLegs,
+          points: currentPoints,
+          totalDarts,
+          frozenValue: null,
+          pendingReset: false,
+          pendingCompletedValue: null,
+          pendingBaseline: null
+        });
+        return newValue;
+      }
+
       if (totalWentBack) {
         legDartsState.set(key, {
           baseline: totalDarts,
           legs: currentLegs,
+          matchLegs: currentMatchLegs,
           points: currentPoints,
           totalDarts,
           frozenValue: null,
@@ -609,6 +633,7 @@
           legDartsState.set(key, {
             ...prev,
             legs: currentLegs,
+            matchLegs: currentMatchLegs,
             points: currentPoints,
             totalDarts,
             pendingReset: true,
@@ -623,6 +648,7 @@
         legDartsState.set(key, {
           baseline: newBaseline,
           legs: currentLegs,
+          matchLegs: currentMatchLegs,
           points: currentPoints,
           totalDarts,
           frozenValue: null,
@@ -638,6 +664,7 @@
         legDartsState.set(key, {
           baseline: prev.baseline,
           legs: currentLegs,
+          matchLegs: currentMatchLegs,
           points: currentPoints,
           totalDarts,
           frozenValue: null,
@@ -652,6 +679,7 @@
       legDartsState.set(key, {
         ...prev,
         legs: currentLegs,
+        matchLegs: currentMatchLegs,
         points: currentPoints,
         totalDarts,
         frozenValue: null,
