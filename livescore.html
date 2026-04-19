@@ -567,7 +567,7 @@
         const hadCompletedLeg = prev.holdActive || prev.statuses.some(Boolean) || prev.points.some(p => p === 0);
         const legAdvanced = matchLegs > Number(prev.matchLegs ?? 0);
         const totalsWentBack = totals.some((total, i) => total < Number(prev.totals?.[i] ?? 0));
-        const newLegStarted = totalsWentBack || (hadCompletedLeg && nowAtLegStart && !statuses.some(Boolean)) || legAdvanced;
+        const newLegStarted = totalsWentBack || (!statuses.some(Boolean) && ((hadCompletedLeg && nowAtLegStart) || legAdvanced));
 
         let baselines = prev.baselines.slice();
         let visibleValues;
