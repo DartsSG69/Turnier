@@ -468,6 +468,7 @@
 
     const boardsEl = document.getElementById("boards");
     const legDartsState = new Map();
+    let renderCycle = 0;
     let lastRenderedPayload = "";
     let hasLoadedOnce = false;
 
@@ -511,13 +512,11 @@
       return "";
     }
 
-    function getPlayerKey(match, player, index) {
+    function getMatchKey(match) {
       const names = (match?.matchPlayers || []).map(p => p?.playerName || "").join("|");
       return [
         match?.id ?? match?.matchId ?? match?.board ?? "board",
-        names,
-        index,
-        player?.playerId ?? player?.playerName ?? `player-${index}`
+        names
       ].join("::");
     }
 
@@ -534,159 +533,84 @@
         return Number(explicitLegDarts) || 0;
       }
 
-      const totalDarts = Number(player?.dartsTotal ?? player?.darts ?? 0);
-      const currentLegs = Number(player?.legs ?? 0);
-      const currentMatchLegs = (match?.matchPlayers || []).reduce((sum, p) => sum + Number(p?.legs ?? 0), 0);
-      const currentPoints = Number(player?.points ?? 0);
-      const winnerNow = isWinner(player, match);
-      const checkNow = isCheck(player, match);
-      const key = getPlayerKey(match, player, index);
-      const prev = legDartsState.get(key);
+      const key = getMatchKey(match);
+      const players = match?.matchPlayers || [];
+      const totals = players.map(p => Number(p?.dartsTotal ?? p?.darts ?? 0));
+      const points = players.map(p => Number(p?.points ?? 0));
+      const legs = players.map(p => Number(p?.legs ?? 0));
+      const matchLegs = legs.reduce((sum, value) => sum + value, 0);
+      const statuses = players.map((p) => isWinner(p, match) || isCheck(p, match));
+      const nowAtLegStart = points.every(p => p >= 301);
 
-      if (!prev) {
-        const initialBaseline = currentPoints >= 301 ? totalDarts : 0;
-        const value = Math.max(0, totalDarts - initialBaseline);
-        legDartsState.set(key, {
-          baseline: initialBaseline,
-          legs: currentLegs,
-          matchLegs: currentMatchLegs,
-          points: currentPoints,
-          totalDarts,
-          frozenValue: winnerNow ? value : null,
-          pendingReset: checkNow,
-          pendingCompletedValue: checkNow ? value : null,
-          pendingBaseline: checkNow ? totalDarts : null
-        });
-        return value;
+      let state = legDartsState.get(key);
+
+      if (!state) {
+        const baselines = totals.map((total, i) => (points[i] >= 301 ? total : 0));
+        const visibleValues = totals.map((total, i) => Math.max(0, total - baselines[i]));
+        const holdActive = statuses.some(Boolean) || (points.some(p => p === 0) && !nowAtLegStart);
+        state = {
+          baselines,
+          visibleValues,
+          holdValues: visibleValues.slice(),
+          holdActive,
+          points,
+          totals,
+          matchLegs,
+          statuses,
+          lastRenderCycle: renderCycle
+        };
+        legDartsState.set(key, state);
       }
 
-      const legsIncreased = currentLegs > prev.legs;
-      const matchLegsIncreased = currentMatchLegs > Number(prev.matchLegs ?? prev.legs ?? 0);
-      const totalWentBack = totalDarts < prev.totalDarts;
-      const pointsReturnedToStart = currentPoints >= 301 && prev.points === 0;
-      const newLegStarted = matchLegsIncreased || pointsReturnedToStart;
-      const startedThrowingNewLeg = (
-        prev.pendingReset === true && (
-          totalDarts > Number(prev.pendingBaseline ?? prev.totalDarts ?? 0) ||
-          (currentPoints < prev.points && currentPoints < 301)
-        )
-      );
-      const completedLegValue = Math.max(0, totalDarts - prev.baseline);
+      if (state.lastRenderCycle !== renderCycle) {
+        const prev = state;
+        const hadCompletedLeg = prev.holdActive || prev.statuses.some(Boolean) || prev.points.some(p => p === 0);
+        const legAdvanced = matchLegs > Number(prev.matchLegs ?? 0);
+        const totalsWentBack = totals.some((total, i) => total < Number(prev.totals?.[i] ?? 0));
+        const newLegStarted = totalsWentBack || (hadCompletedLeg && nowAtLegStart && !statuses.some(Boolean)) || legAdvanced;
 
-      if (winnerNow) {
-        const frozenValue = prev.pendingReset
-          ? (prev.pendingCompletedValue ?? completedLegValue)
-          : (prev.frozenValue ?? completedLegValue);
+        let baselines = prev.baselines.slice();
+        let visibleValues;
+        let holdValues = prev.holdValues.slice();
+        let holdActive = prev.holdActive;
 
-        legDartsState.set(key, {
-          baseline: prev.baseline,
-          legs: currentLegs,
-          matchLegs: currentMatchLegs,
-          points: currentPoints,
-          totalDarts,
-          frozenValue,
-          pendingReset: false,
-          pendingCompletedValue: null,
-          pendingBaseline: null
-        });
-        return frozenValue;
-      }
+        if (newLegStarted) {
+          baselines = totals.slice();
+          visibleValues = totals.map(() => 0);
+          holdValues = visibleValues.slice();
+          holdActive = false;
+        } else {
+          const currentValues = totals.map((total, i) => Math.max(0, total - Number(baselines[i] ?? 0)));
+          const legJustCompletedNow = statuses.some(Boolean) || (points.some(p => p === 0) && !nowAtLegStart);
 
-
-      if (newLegStarted) {
-        const newBaseline = Number(prev.pendingBaseline ?? prev.totalDarts ?? totalDarts);
-        const newValue = Math.max(0, totalDarts - newBaseline);
-        legDartsState.set(key, {
-          baseline: newBaseline,
-          legs: currentLegs,
-          matchLegs: currentMatchLegs,
-          points: currentPoints,
-          totalDarts,
-          frozenValue: null,
-          pendingReset: false,
-          pendingCompletedValue: null,
-          pendingBaseline: null
-        });
-        return newValue;
-      }
-
-      if (totalWentBack) {
-        legDartsState.set(key, {
-          baseline: totalDarts,
-          legs: currentLegs,
-          matchLegs: currentMatchLegs,
-          points: currentPoints,
-          totalDarts,
-          frozenValue: null,
-          pendingReset: false,
-          pendingCompletedValue: null,
-          pendingBaseline: null
-        });
-        return 0;
-      }
-
-      if (prev.pendingReset) {
-        const heldValue = prev.pendingCompletedValue ?? completedLegValue;
-
-        if (!startedThrowingNewLeg) {
-          legDartsState.set(key, {
-            ...prev,
-            legs: currentLegs,
-            matchLegs: currentMatchLegs,
-            points: currentPoints,
-            totalDarts,
-            pendingReset: true,
-            pendingCompletedValue: heldValue,
-            pendingBaseline: prev.pendingBaseline ?? prev.totalDarts
-          });
-          return heldValue;
+          if (holdActive || legJustCompletedNow) {
+            if (!holdActive && legJustCompletedNow) {
+              holdValues = currentValues.slice();
+            }
+            visibleValues = holdValues.slice();
+            holdActive = true;
+          } else {
+            visibleValues = currentValues;
+            holdValues = visibleValues.slice();
+            holdActive = false;
+          }
         }
 
-        const newBaseline = Number(prev.pendingBaseline ?? prev.totalDarts ?? totalDarts);
-        const newValue = Math.max(0, totalDarts - newBaseline);
-        legDartsState.set(key, {
-          baseline: newBaseline,
-          legs: currentLegs,
-          matchLegs: currentMatchLegs,
-          points: currentPoints,
-          totalDarts,
-          frozenValue: null,
-          pendingReset: false,
-          pendingCompletedValue: null,
-          pendingBaseline: null
-        });
-        return newValue;
+        state = {
+          baselines,
+          visibleValues,
+          holdValues,
+          holdActive,
+          points,
+          totals,
+          matchLegs,
+          statuses,
+          lastRenderCycle: renderCycle
+        };
+        legDartsState.set(key, state);
       }
 
-      if (checkNow || legsIncreased || pointsReturnedToStart) {
-        const heldValue = completedLegValue;
-        legDartsState.set(key, {
-          baseline: prev.baseline,
-          legs: currentLegs,
-          matchLegs: currentMatchLegs,
-          points: currentPoints,
-          totalDarts,
-          frozenValue: null,
-          pendingReset: true,
-          pendingCompletedValue: heldValue,
-          pendingBaseline: totalDarts
-        });
-        return heldValue;
-      }
-
-      const value = completedLegValue;
-      legDartsState.set(key, {
-        ...prev,
-        legs: currentLegs,
-        matchLegs: currentMatchLegs,
-        points: currentPoints,
-        totalDarts,
-        frozenValue: null,
-        pendingReset: false,
-        pendingCompletedValue: null,
-        pendingBaseline: null
-      });
-      return value;
+      return Number(state.visibleValues?.[index] ?? 0);
     }
 
     function scoreColor(points) {
@@ -818,6 +742,7 @@
     }
 
     function renderBoards(matches) {
+      renderCycle += 1;
       if (!Array.isArray(matches) || matches.length === 0) {
         boardsEl.innerHTML = `
           <div class="empty">Aktuell sind keine Live-Boards verfügbar.</div>
