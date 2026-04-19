@@ -449,6 +449,7 @@
     const boardsEl = document.getElementById("boards");
     const statusTextEl = document.getElementById("status-text");
     const lastUpdatedEl = document.getElementById("last-updated");
+    const legDartsState = new Map();
 
     function formatTimestamp(value) {
       if (!value) return "Kein Zeitstempel";
@@ -488,6 +489,71 @@
         return String(player.lastScore);
       }
       return "";
+    }
+
+    function getPlayerKey(match, player, index) {
+      const names = (match?.matchPlayers || []).map(p => p?.playerName || "").join("|");
+      return [
+        match?.id ?? match?.matchId ?? match?.board ?? "board",
+        names,
+        index,
+        player?.playerId ?? player?.playerName ?? `player-${index}`
+      ].join("::");
+    }
+
+    function getPerLegDarts(match, player, index) {
+      const explicitLegDarts = [
+        player?.dartsCurrentLeg,
+        player?.currentLegDarts,
+        player?.legDarts,
+        player?.dartsThisLeg,
+        player?.dartsInLeg
+      ].find(v => v !== undefined && v !== null && v !== "");
+
+      if (explicitLegDarts !== undefined) {
+        return Number(explicitLegDarts) || 0;
+      }
+
+      const totalDarts = Number(player?.dartsTotal ?? player?.darts ?? 0);
+      const currentLegs = Number(player?.legs ?? 0);
+      const currentPoints = Number(player?.points ?? 0);
+      const key = getPlayerKey(match, player, index);
+      const prev = legDartsState.get(key);
+
+      if (!prev) {
+        const initialBaseline = currentPoints >= 301 ? totalDarts : 0;
+        const value = Math.max(0, totalDarts - initialBaseline);
+        legDartsState.set(key, {
+          baseline: initialBaseline,
+          legs: currentLegs,
+          points: currentPoints,
+          totalDarts
+        });
+        return value;
+      }
+
+      const legsIncreased = currentLegs > prev.legs;
+      const pointsReset = currentPoints > prev.points && currentPoints >= 301;
+      const totalWentBack = totalDarts < prev.totalDarts;
+
+      if (legsIncreased || pointsReset || totalWentBack) {
+        legDartsState.set(key, {
+          baseline: totalDarts,
+          legs: currentLegs,
+          points: currentPoints,
+          totalDarts
+        });
+        return 0;
+      }
+
+      const value = Math.max(0, totalDarts - prev.baseline);
+      legDartsState.set(key, {
+        ...prev,
+        legs: currentLegs,
+        points: currentPoints,
+        totalDarts
+      });
+      return value;
     }
 
     function scoreColor(points) {
@@ -548,8 +614,8 @@
       `;
     }
 
-    function statsSide(player, order = "left") {
-      const darts = player?.dartsTotal ?? player?.darts ?? 0;
+    function statsSide(match, player, index, order = "left") {
+      const darts = getPerLegDarts(match, player, index);
       const avg = formatAvg(player);
       const legs = player?.legs ?? 0;
 
@@ -624,8 +690,8 @@
             </div>
 
             <div class="stats-wrap">
-              ${statsSide(p1, "left")}
-              ${statsSide(p2, "right")}
+              ${statsSide(match, p1, 0, "left")}
+              ${statsSide(match, p2, 1, "right")}
             </div>
           </article>
         `;
