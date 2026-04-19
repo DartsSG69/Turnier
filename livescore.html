@@ -474,17 +474,6 @@
     const statusTextEl = document.getElementById("status-text");
     const lastUpdatedEl = document.getElementById("last-updated");
 
-    function formatTimestamp(value) {
-      if (!value) return "Kein Zeitstempel";
-      const date = new Date(value);
-      if (Number.isNaN(date.getTime())) return value;
-      return new Intl.DateTimeFormat("de-DE", {
-        hour: "2-digit",
-        minute: "2-digit",
-        second: "2-digit"
-      }).format(date);
-    }
-
     function formatAvg(player) {
       if (typeof player?.avg === "number") return player.avg.toFixed(1);
       if (typeof player?.avgScore === "number") return player.avgScore.toFixed(1);
@@ -542,12 +531,18 @@
     }
 
     function isMatchNotStarted(match) {
+      const statusComingSoon = match?.statusComingSoon === true || String(match?.statusComingSoon).toLowerCase() === "true";
+      const statusActive = match?.statusActive === true || String(match?.statusActive).toLowerCase() === "true";
+      const statusFinished = match?.statusFinished === true || String(match?.statusFinished).toLowerCase() === "true";
+      const status = Number(match?.status ?? -1);
+      const currentplayerIndex = Number(match?.currentplayerIndex ?? -999);
+
       return (
-        match?.statusComingSoon === true &&
-        match?.statusActive === false &&
-        match?.statusFinished === false &&
-        Number(match?.status ?? -1) === 0 &&
-        Number(match?.currentplayerIndex ?? -2) === -1
+        statusComingSoon &&
+        !statusActive &&
+        !statusFinished &&
+        status === 0 &&
+        currentplayerIndex === -1
       );
     }
 
@@ -643,6 +638,7 @@
         const p2 = match.matchPlayers?.[1] || {};
         const activeIndex = match.currentplayerIndex;
         const callerText = getCaller(match);
+        const preStart = isMatchNotStarted(match);
 
         return `
           <article class="board-card">
@@ -659,7 +655,7 @@
 
             <div class="players-wrap">
               ${
-                isMatchNotStarted(match)
+                preStart
                   ? `
                     <div class="prestart-panel">
                       <div class="prestart-caller">Caller: ${callerText || "-"}</div>
