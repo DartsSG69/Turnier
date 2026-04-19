@@ -286,6 +286,22 @@
       color: var(--green);
     }
 
+    .score-main.status {
+      font-size: 3rem;
+      letter-spacing: 0;
+      text-transform: uppercase;
+    }
+
+    .score-main.status.check {
+      color: var(--green);
+      text-shadow: 0 0 12px rgba(0, 224, 90, 0.28);
+    }
+
+    .score-main.status.winner {
+      color: var(--winner);
+      text-shadow: 0 0 12px rgba(255, 213, 74, 0.28);
+    }
+
     .dart-values {
       position: relative;
       display: grid;
@@ -677,7 +693,7 @@
 
     function getStatusLabel(player, match) {
       if (isWinner(player, match)) {
-        return { text: "Sieger", className: "" };
+        return { text: "Sieger", className: "winner" };
       }
       if (isCheck(player, match)) {
         return { text: "Check", className: "check" };
@@ -691,25 +707,32 @@
       const lastScore = getLastScore(player);
 
       const status = getStatusLabel(player, match);
+      const hasStatus = status.text !== "&nbsp;";
 
-      const scoreMarkup = side === "left"
+      const scoreMarkup = hasStatus
         ? `
           <div class="score-row">
-            <div class="last-score">${lastScore || "&nbsp;"}</div>
-            <div class="score-main ${scoreColor(points)}">${points}</div>
+            <div class="score-main status ${status.className}">${status.text}</div>
           </div>
         `
-        : `
-          <div class="score-row">
-            <div class="score-main ${scoreColor(points)}">${points}</div>
-            <div class="last-score">${lastScore || "&nbsp;"}</div>
-          </div>
-        `;
+        : side === "left"
+          ? `
+            <div class="score-row">
+              <div class="last-score">${lastScore || "&nbsp;"}</div>
+              <div class="score-main ${scoreColor(points)}">${points}</div>
+            </div>
+          `
+          : `
+            <div class="score-row">
+              <div class="score-main ${scoreColor(points)}">${points}</div>
+              <div class="last-score">${lastScore || "&nbsp;"}</div>
+            </div>
+          `;
 
       return `
         <div class="player-panel ${isActive ? "active" : ""}">
           <div class="player-name">${player?.playerName ?? "Unbekannt"}</div>
-          <div class="winner-label ${status.className}">${status.text}</div>
+          <div class="winner-label">&nbsp;</div>
 
           ${scoreMarkup}
 
