@@ -1,6 +1,6 @@
 export default async function handler(req, res) {
   try {
-    const url = `https://live.3k-darts.com/dartsscorer-liveticker/api/v1/match/6/0/20219?t=${Date.now()}`;
+    const url = `https://live.3k-darts.com/dartsscorer-liveticker/api/v1/match/11/0/3973?t=${Date.now()}`;
 //Scoring Spieltag Herhan Morsbach - const url = `https://live.3k-darts.com/dartsscorer-liveticker/api/v1/match/5/0/1500429?t=${Date.now()}`;
 //Score SG Turnier - const url = `https://live.3k-darts.com/dartsscorer-liveticker/api/v1/match/11/0/983?t=${Date.now()}`;
 
