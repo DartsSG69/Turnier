@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>SG69 Flight Night – Live Boards</title>
+  <title>Kalle's Flight Night – Live Boards</title>
   <style>
     :root {
       --bg: #050b22;
@@ -51,7 +51,7 @@
         linear-gradient(180deg, var(--overlay-dark), rgba(4, 10, 30, 0.84)),
         radial-gradient(circle at center, transparent 0%, rgba(2, 7, 22, 0.30) 55%, rgba(2, 7, 22, 0.74) 100%),
         linear-gradient(135deg, var(--overlay-blue), transparent 45%),
-        url("sg_flight_night_hintergrundbild.png");
+        url("kalles_flight_night_hintergrundbild.png");
       background-size: cover;
       background-position: center center;
       background-repeat: no-repeat;
@@ -84,7 +84,7 @@
       font-weight: 900;
       letter-spacing: 0.04em;
       line-height: 0.9;
-      font-size: clamp(1.8rem, 4.2vw, 4rem);
+      font-size: clamp(2.4rem, 6.4vw, 5.8rem);
       color: #ffffff;
       padding: 0;
       transform: skewX(-10deg) rotate(-2deg);
@@ -111,7 +111,7 @@
       border-radius: 999px;
       text-decoration: none;
       color: #ffffff;
-      font-size: 1.95rem;
+      font-size: 1.95 rem;
       font-weight: 700;
       background: rgba(8, 18, 46, 0.72);
       border: 1px solid rgba(134, 170, 255, 0.22);
@@ -204,7 +204,6 @@
       display: grid;
       grid-template-columns: 1fr 1fr;
       background: transparent;
-      position: relative;
     }
 
     .player-panel {
@@ -252,6 +251,11 @@
       text-shadow: 0 0 12px rgba(255, 213, 74, 0.28);
     }
 
+    .winner-label.check {
+      color: var(--green);
+      text-shadow: 0 0 12px rgba(0, 224, 90, 0.28);
+    }
+
     .score-row {
       display: flex;
       align-items: center;
@@ -282,28 +286,24 @@
       color: var(--green);
     }
 
-    .caller-overlay {
-      position: absolute;
-      left: 0;
-      right: 0;
-      top: 62px;
-      min-height: 58px;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      z-index: 5;
-      pointer-events: none;
+    .score-main.orange {
+      color: #ff9f1a;
     }
 
-    .caller-overlay-text {
+    .score-main.status {
       font-size: 3rem;
-      line-height: 1;
-      font-weight: 900;
-      color: #ff3b3b;
-      letter-spacing: -0.04em;
-      text-shadow: 0 3px 12px rgba(0,0,0,0.22);
-      text-align: center;
-      padding: 0 12px;
+      letter-spacing: 0;
+      text-transform: uppercase;
+    }
+
+    .score-main.status.check {
+      color: var(--green);
+      text-shadow: 0 0 12px rgba(0, 224, 90, 0.28);
+    }
+
+    .score-main.status.winner {
+      color: var(--winner);
+      text-shadow: 0 0 12px rgba(255, 213, 74, 0.28);
     }
 
     .dart-values {
@@ -434,7 +434,7 @@
       }
 
       .hero-heading {
-        font-size: clamp(1.4rem, 8vw, 2.6rem);
+        font-size: clamp(1.8rem, 9vw, 3.4rem);
         white-space: normal;
         line-height: 0.95;
       }
@@ -442,15 +442,11 @@
       .boards {
         margin-top: 20px;
       }
-
-      .caller-overlay-text {
-        font-size: 2.4rem;
-      }
     }
   </style>
 </head>
 <body>
-  <section class="hero" aria-label="SG69 Flight Night Live Boards">
+  <section class="hero" aria-label="Kalle's Flight Night Live Boards">
     <div class="shell">
       <div class="hero-heading-wrap">
         <h1 class="hero-heading">Live Scoring</h1>
@@ -462,22 +458,30 @@
 
       <div class="boards" id="boards"></div>
 
-      <div class="footer-status">
-        <span class="dot"></span>
-        <span id="status-text">Live-Daten werden geladen …</span>
-        <span>•</span>
-        <span id="last-updated">Noch kein Update</span>
-      </div>
+      <div class="footer-status" aria-hidden="true" style="display:none"></div>
     </div>
   </section>
 
   <script>
     const EVENT_URL = "/api/boards";
-    const REFRESH_MS = 3000;
+    const REFRESH_MS = 1000;
 
     const boardsEl = document.getElementById("boards");
-    const statusTextEl = document.getElementById("status-text");
-    const lastUpdatedEl = document.getElementById("last-updated");
+    const legDartsState = new Map();
+    let renderCycle = 0;
+    let lastRenderedPayload = "";
+    let hasLoadedOnce = false;
+
+    function formatTimestamp(value) {
+      if (!value) return "Kein Zeitstempel";
+      const date = new Date(value);
+      if (Number.isNaN(date.getTime())) return value;
+      return new Intl.DateTimeFormat("de-DE", {
+        hour: "2-digit",
+        minute: "2-digit",
+        second: "2-digit"
+      }).format(date);
+    }
 
     function formatAvg(player) {
       if (typeof player?.avg === "number") return player.avg.toFixed(1);
@@ -493,8 +497,7 @@
       return "0.0";
     }
 
-    function getDartValues(player, preStart) {
-      if (preStart) return ["", "", ""];
+    function getDartValues(player) {
       const darts = [player?.dart1, player?.dart2, player?.dart3];
       if (darts.some(v => v !== undefined && v !== null && v !== "")) {
         return darts.map(v => (v === undefined || v === null || v === "" ? "" : String(v)));
@@ -502,22 +505,119 @@
       return ["", "", ""];
     }
 
-    function getLastScore(player, preStart) {
-      if (preStart) return "";
+    function getLastScore(player) {
       if (player?.lastScore !== undefined && player?.lastScore !== null) {
         return String(player.lastScore);
       }
       return "";
     }
 
-    function getPoints(player, preStart) {
-      if (preStart) return "";
-      return player?.points ?? "-";
+    function getMatchKey(match) {
+      const names = (match?.matchPlayers || []).map(p => p?.playerName || "").join("|");
+      return [
+        match?.id ?? match?.matchId ?? match?.board ?? "board",
+        names
+      ].join("::");
     }
 
-    function scoreColor(points, preStart) {
-      if (preStart) return "";
+    function getPerLegDarts(match, player, index) {
+      const explicitLegDarts = [
+        player?.dartsCurrentLeg,
+        player?.currentLegDarts,
+        player?.legDarts,
+        player?.dartsThisLeg,
+        player?.dartsInLeg
+      ].find(v => v !== undefined && v !== null && v !== "");
+
+      if (explicitLegDarts !== undefined) {
+        return Number(explicitLegDarts) || 0;
+      }
+
+      const key = getMatchKey(match);
+      const players = match?.matchPlayers || [];
+      const totals = players.map(p => Number(p?.dartsTotal ?? p?.darts ?? 0));
+      const points = players.map(p => Number(p?.points ?? 0));
+      const legs = players.map(p => Number(p?.legs ?? 0));
+      const matchLegs = legs.reduce((sum, value) => sum + value, 0);
+      const statuses = players.map((p) => isWinner(p, match) || isCheck(p, match));
+      const nowAtLegStart = points.every(p => p >= 301);
+
+      let state = legDartsState.get(key);
+
+      if (!state) {
+        const baselines = totals.slice();
+        const visibleValues = totals.map(() => 0);
+        const holdActive = statuses.some(Boolean) || (points.some(p => p === 0) && !nowAtLegStart);
+        state = {
+          baselines,
+          visibleValues,
+          holdValues: visibleValues.slice(),
+          holdActive,
+          points,
+          totals,
+          matchLegs,
+          statuses,
+          lastRenderCycle: renderCycle
+        };
+        legDartsState.set(key, state);
+      }
+
+      if (state.lastRenderCycle !== renderCycle) {
+        const prev = state;
+        const hadCompletedLeg = prev.holdActive || prev.statuses.some(Boolean) || prev.points.some(p => p === 0);
+        const legAdvanced = matchLegs > Number(prev.matchLegs ?? 0);
+        const totalsWentBack = totals.some((total, i) => total < Number(prev.totals?.[i] ?? 0));
+        const newLegStarted = totalsWentBack || (!statuses.some(Boolean) && ((hadCompletedLeg && nowAtLegStart) || legAdvanced));
+
+        let baselines = prev.baselines.slice();
+        let visibleValues;
+        let holdValues = prev.holdValues.slice();
+        let holdActive = prev.holdActive;
+
+        if (newLegStarted) {
+          baselines = totals.slice();
+          visibleValues = totals.map(() => 0);
+          holdValues = visibleValues.slice();
+          holdActive = false;
+        } else {
+          const currentValues = totals.map((total, i) => Math.max(0, total - Number(baselines[i] ?? 0)));
+          const legJustCompletedNow = statuses.some(Boolean) || (points.some(p => p === 0) && !nowAtLegStart);
+
+          if (holdActive || legJustCompletedNow) {
+            if (!holdActive && legJustCompletedNow) {
+              holdValues = currentValues.slice();
+            }
+            visibleValues = holdValues.slice();
+            holdActive = true;
+          } else {
+            visibleValues = currentValues;
+            holdValues = visibleValues.slice();
+            holdActive = false;
+          }
+        }
+
+        state = {
+          baselines,
+          visibleValues,
+          holdValues,
+          holdActive,
+          points,
+          totals,
+          matchLegs,
+          statuses,
+          lastRenderCycle: renderCycle
+        };
+        legDartsState.set(key, state);
+      }
+
+      return Number(state.visibleValues?.[index] ?? 0);
+    }
+
+    function scoreColor(points) {
       const p = Number(points);
+      const orangeScores = new Set([159, 162, 163, 165, 166, 168, 169]);
+
+      if (!Number.isNaN(p) && orangeScores.has(p)) return "orange";
       if (!Number.isNaN(p) && p <= 170) return "green";
       return "";
     }
@@ -539,42 +639,54 @@
       return false;
     }
 
-    function getCaller(match) {
-      return String(match?.writer ?? "").trim();
+    function isCheck(player, match) {
+      if (!player || isWinner(player, match)) return false;
+      if (player?.check === true || player?.isCheck === true) return true;
+      return Number(player?.points ?? -1) === 0;
     }
 
-    function isMatchNotStarted(match) {
-      return (
-        Number(match?.status ?? -1) === 0 &&
-        Number(match?.currentplayerIndex ?? -2) === -1 &&
-        match?.statusComingSoon === true &&
-        match?.statusActive === false
-      );
+    function getStatusLabel(player, match) {
+      if (isWinner(player, match)) {
+        return { text: "Sieger", className: "winner" };
+      }
+      if (isCheck(player, match)) {
+        return { text: "Check", className: "check" };
+      }
+      return { text: "&nbsp;", className: "" };
     }
 
-    function playerPanel(player, isActive, winner, side, preStart) {
-      const darts = getDartValues(player, preStart);
-      const points = getPoints(player, preStart);
-      const lastScore = getLastScore(player, preStart);
+    function playerPanel(player, isActive, winner, side, match) {
+      const darts = getDartValues(player);
+      const points = player?.points ?? "-";
+      const lastScore = getLastScore(player);
 
-      const scoreMarkup = side === "left"
+      const status = getStatusLabel(player, match);
+      const hasStatus = status.text !== "&nbsp;";
+
+      const scoreMarkup = hasStatus
         ? `
           <div class="score-row">
-            <div class="last-score">${lastScore || "&nbsp;"}</div>
-            <div class="score-main ${scoreColor(points, preStart)}">${points || "&nbsp;"}</div>
+            <div class="score-main status ${status.className}">${status.text}</div>
           </div>
         `
-        : `
-          <div class="score-row">
-            <div class="score-main ${scoreColor(points, preStart)}">${points || "&nbsp;"}</div>
-            <div class="last-score">${lastScore || "&nbsp;"}</div>
-          </div>
-        `;
+        : side === "left"
+          ? `
+            <div class="score-row">
+              <div class="last-score">${lastScore || "&nbsp;"}</div>
+              <div class="score-main ${scoreColor(points)}">${points}</div>
+            </div>
+          `
+          : `
+            <div class="score-row">
+              <div class="score-main ${scoreColor(points)}">${points}</div>
+              <div class="last-score">${lastScore || "&nbsp;"}</div>
+            </div>
+          `;
 
       return `
         <div class="player-panel ${isActive ? "active" : ""}">
           <div class="player-name">${player?.playerName ?? "Unbekannt"}</div>
-          <div class="winner-label">${winner ? "Sieger" : "&nbsp;"}</div>
+          <div class="winner-label">&nbsp;</div>
 
           ${scoreMarkup}
 
@@ -587,8 +699,8 @@
       `;
     }
 
-    function statsSide(player, order = "left") {
-      const darts = player?.dartsTotal ?? player?.darts ?? 0;
+    function statsSide(match, player, index, order = "left") {
+      const darts = Number(player?.darts ?? 0);
       const avg = formatAvg(player);
       const legs = player?.legs ?? 0;
 
@@ -630,6 +742,7 @@
     }
 
     function renderBoards(matches) {
+      renderCycle += 1;
       if (!Array.isArray(matches) || matches.length === 0) {
         boardsEl.innerHTML = `
           <div class="empty">Aktuell sind keine Live-Boards verfügbar.</div>
@@ -643,8 +756,6 @@
         const p1 = match.matchPlayers?.[0] || {};
         const p2 = match.matchPlayers?.[1] || {};
         const activeIndex = match.currentplayerIndex;
-        const preStart = isMatchNotStarted(match);
-        const callerText = getCaller(match);
 
         return `
           <article class="board-card">
@@ -660,23 +771,13 @@
             </div>
 
             <div class="players-wrap">
-              ${playerPanel(p1, activeIndex === 0, isWinner(p1, match), "left", preStart)}
-              ${playerPanel(p2, activeIndex === 1, isWinner(p2, match), "right", preStart)}
-
-              ${
-                preStart
-                  ? `
-                    <div class="caller-overlay">
-                      <div class="caller-overlay-text">Caller: ${callerText || "-"}</div>
-                    </div>
-                  `
-                  : ``
-              }
+              ${playerPanel(p1, activeIndex === 0, isWinner(p1, match), "left", match)}
+              ${playerPanel(p2, activeIndex === 1, isWinner(p2, match), "right", match)}
             </div>
 
             <div class="stats-wrap">
-              ${statsSide(p1, "left")}
-              ${statsSide(p2, "right")}
+              ${statsSide(match, p1, 0, "left")}
+              ${statsSide(match, p2, 1, "right")}
             </div>
           </article>
         `;
@@ -685,8 +786,6 @@
 
     async function loadBoards() {
       try {
-        statusTextEl.textContent = "Live-Daten werden geladen …";
-
         const response = await fetch(EVENT_URL, {
           headers: {
             Accept: "application/json"
@@ -695,14 +794,15 @@
 
         const text = await response.text();
         const json = JSON.parse(text);
+        const matches = json.data ?? [];
+        const payloadKey = JSON.stringify(matches);
 
-        renderBoards(json.data ?? []);
-        statusTextEl.textContent = `${json.data?.length ?? 0} Boards live`;
-        lastUpdatedEl.textContent = `Letztes Update: ${new Date().toLocaleTimeString("de-DE")}`;
+        if (!hasLoadedOnce || payloadKey !== lastRenderedPayload) {
+          renderBoards(matches);
+          lastRenderedPayload = payloadKey;
+          hasLoadedOnce = true;
+        }
       } catch (error) {
-        statusTextEl.textContent = "Live-Daten konnten nicht geladen werden";
-        lastUpdatedEl.textContent = error.message;
-
         boardsEl.innerHTML = `
           <div class="empty">Fehler beim Laden der Live-Daten.<br>${error.message}</div>
         `;
