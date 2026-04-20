@@ -1,8 +1,7 @@
 export default async function handler(req, res) {
   try {
- //   const url = `https://live.3k-darts.com/dartsscorer-liveticker/api/v1/match/11/0/3973?t=${Date.now()}`;
-//const url = `https://live.3k-darts.com/dartsscorer-liveticker/api/v1/match/5/0/1500429?t=${Date.now()}`;
-const url = `https://live.3k-darts.com/dartsscorer-liveticker/api/v1/match/11/0/983?t=${Date.now()}`;
+const url = `https://live.3k-darts.com/dartsscorer-liveticker/api/v1/match/11/0/3973?t=${Date.now()}`; //Testturnier
+//Turnier SG - const url = `https://live.3k-darts.com/dartsscorer-liveticker/api/v1/match/11/0/983?t=${Date.now()}`;
 
     const response = await fetch(url, {
       headers: {
