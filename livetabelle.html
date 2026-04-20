@@ -414,9 +414,7 @@
         const text = await response.text();
         const json = JSON.parse(text);
 
-        const groups = json?.tableInfo?.tableEntries ??
-                     = json?.tableEntries ??
-                       [];
+        const groups = json?.tableInfo?.tableEntries || [];
 
         if (!groups.length) {
           tablesEl.innerHTML = `
