@@ -1,7 +1,8 @@
 export default async function handler(req, res) {
   try { 
+  const url = `https://backend4.3k-darts.com/2k-backend4/api/v1/frontend/event/12059/phase/0/round/0/table?t=${Date.now()}`; 
 //const url = `https://backend6.3k-darts.com/2k-backend6/api/v1/frontend/event/3973/phase/5894/round/0?t=${Date.now()}`;  
-const url = `https://backend6.3k-darts.com/2k-backend6/api/v1/frontend/event/983/phase/5529/round/0?t=${Date.now()}`;//Turnier SG 
+//Turnier SG const url = `https://backend6.3k-darts.com/2k-backend6/api/v1/frontend/event/983/phase/5529/round/0?t=${Date.now()}`;
 
     const response = await fetch(url, {
       headers: {
