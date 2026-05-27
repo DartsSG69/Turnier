@@ -362,7 +362,8 @@
     }
 
     function renderTableGroup(group) {
-      const rows = (group.tableEntries || []).slice(0, 5);
+      //const rows = (group.tableEntries || []).slice(0, 5);
+      const rows = group.tableEntries || [];
 
       return `
         <article class="table-card">
