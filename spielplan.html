@@ -1,0 +1,530 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>SG69 Flight Night - Spielplan</title>
+  <style>
+    :root {
+      --bg: #050b22;
+      --text: #ffffff;
+      --muted: rgba(255, 255, 255, 0.72);
+      --overlay-dark: rgba(3, 8, 24, 0.34);
+      --overlay-blue: rgba(21, 49, 130, 0.16);
+      --button-bg: rgba(8, 18, 46, 0.82);
+      --button-border: rgba(134, 170, 255, 0.24);
+      --button-hover: rgba(33, 72, 190, 0.88);
+      --button-text: #ffffff;
+      --panel-bg: rgba(5, 12, 34, 0.64);
+      --game-bg: rgba(8, 18, 46, 0.82);
+      --game-bg-soft: rgba(8, 18, 46, 0.58);
+      --accent: rgba(134, 170, 255, 0.62);
+      --open-green: #00ff66;
+      --error-bg: rgba(140, 20, 20, 0.40);
+      --error-border: rgba(255, 120, 120, 0.35);
+    }
+
+    * { box-sizing: border-box; }
+
+    html, body {
+      margin: 0;
+      width: 100%;
+      min-height: 100%;
+      font-family: Arial, Helvetica, sans-serif;
+      background: var(--bg);
+    }
+
+    body {
+      min-height: 100vh;
+      color: var(--text);
+    }
+
+    .hero {
+      position: relative;
+      min-height: 100vh;
+      isolation: isolate;
+      background-image:
+        linear-gradient(180deg, var(--overlay-dark), rgba(4, 10, 30, 0.46)),
+        radial-gradient(circle at center, transparent 0%, rgba(2, 7, 22, 0.14) 55%, rgba(2, 7, 22, 0.36) 100%),
+        linear-gradient(135deg, var(--overlay-blue), transparent 45%),
+        url("sg_flight_night_hintergrundbild.png");
+      background-size: cover;
+      background-position: center center;
+      background-repeat: no-repeat;
+      padding: 28px 22px 40px;
+      display: flex;
+      align-items: flex-end;
+      justify-content: center;
+    }
+
+    .shell {
+      width: min(1200px, 100%);
+      min-height: calc(100vh - 80px);
+      margin: 0 auto;
+      display: grid;
+      align-items: end;
+    }
+
+    .content {
+      width: 100%;
+      padding-bottom: 20px;
+    }
+
+    .header {
+      width: 100%;
+      margin-bottom: 18px;
+      padding: 18px 22px;
+      border-radius: 22px;
+      background: var(--panel-bg);
+      border: 1px solid var(--button-border);
+      backdrop-filter: blur(12px);
+      box-shadow:
+        0 18px 40px rgba(0, 0, 0, 0.28),
+        inset 0 1px 0 rgba(255,255,255,0.05);
+    }
+
+    .back-link {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      margin-bottom: 14px;
+      color: var(--button-text);
+      text-decoration: none;
+      font-size: 0.95rem;
+      font-weight: 700;
+      opacity: 0.86;
+    }
+
+    .back-link:hover { opacity: 1; }
+
+    h1 {
+      margin: 0;
+      font-size: clamp(1.8rem, 3vw, 3rem);
+      line-height: 1.1;
+      letter-spacing: 0.01em;
+    }
+
+    .subtitle {
+      margin: 10px 0 0;
+      color: var(--muted);
+      font-size: clamp(0.95rem, 1.4vw, 1.1rem);
+    }
+
+    .filter-row {
+      display: grid;
+      grid-template-columns: auto minmax(220px, 420px);
+      align-items: center;
+      gap: 12px;
+      margin-top: 18px;
+    }
+
+    .filter-label {
+      color: var(--muted);
+      font-size: 0.95rem;
+      font-weight: 800;
+      white-space: nowrap;
+    }
+
+    .player-filter {
+      width: 100%;
+      min-height: 46px;
+      padding: 10px 14px;
+      border-radius: 14px;
+      color: var(--button-text);
+      background: rgba(8, 18, 46, 0.88);
+      border: 1px solid var(--button-border);
+      outline: none;
+      font-size: 1rem;
+      font-weight: 800;
+      backdrop-filter: blur(12px);
+      box-shadow:
+        0 10px 24px rgba(0, 0, 0, 0.22),
+        inset 0 1px 0 rgba(255,255,255,0.05);
+    }
+
+    .player-filter option {
+      color: #050b22;
+      background: #ffffff;
+    }
+
+    .game-list {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 14px;
+      width: 100%;
+      align-items: stretch;
+    }
+
+    .game-card {
+      display: grid;
+      grid-template-columns: auto minmax(0, 1fr);
+      align-items: center;
+      gap: 14px;
+      min-height: 64px;
+      padding: 14px 18px;
+      border-radius: 18px;
+      color: var(--button-text);
+      background: var(--game-bg);
+      border: 1px solid var(--button-border);
+      backdrop-filter: blur(12px);
+      box-shadow:
+        0 14px 30px rgba(0, 0, 0, 0.24),
+        inset 0 1px 0 rgba(255,255,255,0.05);
+    }
+
+    .board-badge {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      min-width: 96px;
+      min-height: 42px;
+      padding: 8px 12px;
+      border-radius: 999px;
+      color: var(--open-green);
+      background: var(--game-bg-soft);
+      border: 1px solid rgba(0, 255, 102, 0.44);
+      font-size: 0.98rem;
+      font-weight: 900;
+      letter-spacing: 0.03em;
+      white-space: nowrap;
+      text-shadow: 0 0 12px rgba(0, 255, 102, 0.42);
+    }
+
+    .match-line {
+      display: flex;
+      align-items: center;
+      min-width: 0;
+      gap: 12px;
+      font-size: clamp(1.05rem, 1.7vw, 1.45rem);
+      font-weight: 800;
+      letter-spacing: 0.01em;
+      white-space: nowrap;
+      overflow: hidden;
+    }
+
+    .versus {
+      flex: 0 0 auto;
+      color: var(--muted);
+      font-size: 0.9em;
+      font-weight: 900;
+    }
+
+    .team {
+      min-width: 0;
+      padding: 0;
+      border-radius: 0;
+      font-size: inherit;
+      font-weight: inherit;
+      letter-spacing: inherit;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .team.home,
+    .team.away {
+      text-align: left;
+    }
+
+    .message {
+      grid-column: 1 / -1;
+      width: 100%;
+      padding: 20px 22px;
+      border-radius: 18px;
+      background: var(--panel-bg);
+      border: 1px solid var(--button-border);
+      color: var(--button-text);
+      backdrop-filter: blur(12px);
+    }
+
+    .message.error {
+      background: var(--error-bg);
+      border-color: var(--error-border);
+    }
+
+    @media (max-width: 760px) {
+      .hero {
+        padding: 20px 12px 28px;
+      }
+
+      .header {
+        border-radius: 18px;
+        padding: 16px;
+      }
+
+      .filter-row {
+        grid-template-columns: 1fr;
+        gap: 8px;
+        margin-top: 16px;
+      }
+
+      .game-list {
+        grid-template-columns: 1fr;
+        gap: 10px;
+      }
+
+      .game-card {
+        grid-template-columns: auto minmax(0, 1fr);
+        min-height: 58px;
+        padding: 12px;
+        border-radius: 16px;
+        text-align: left;
+      }
+
+      .board-badge {
+        min-width: 76px;
+        min-height: 36px;
+        font-size: 0.86rem;
+        padding: 7px 10px;
+      }
+
+      .match-line {
+        gap: 8px;
+        font-size: 1rem;
+      }
+    }
+  </style>
+</head>
+<body>
+  <section class="hero" aria-label="SG69 Flight Night Spielplan">
+    <main class="shell">
+      <div class="content">
+        <header class="header">
+          <a class="back-link" href="index.html" aria-label="Zurück zur Startseite">← Zurück</a>
+          <h1>Spielplan</h1>
+          <p class="subtitle">Offene Spiele der SG69 Flight Night</p>
+
+          <div class="filter-row">
+            <label class="filter-label" for="playerFilter">Spieler filtern</label>
+            <select class="player-filter" id="playerFilter" aria-label="Spieler filtern">
+              <option value="">Alle Spieler</option>
+            </select>
+          </div>
+        </header>
+
+        <div id="games" class="game-list" aria-live="polite">
+          <div class="message">Offene Spiele werden geladen …</div>
+        </div>
+      </div>
+    </main>
+  </section>
+
+  <script>
+    const ROUND_URL = "https://backend6.3k-darts.com/2k-backend6/api/v1/frontend/event/5934/phase/8962/round/0";
+    const gamesContainer = document.getElementById("games");
+    const playerFilter = document.getElementById("playerFilter");
+    let openMatches = [];
+
+    function normalize(value) {
+      return String(value || "")
+        .toLowerCase()
+        .replace(/\s+/g, " ")
+        .trim();
+    }
+
+    function getParticipantName(participant) {
+      if (!participant || typeof participant !== "object") return "";
+      return participant.displayName
+        || participant.name
+        || participant.teamSeason?.name
+        || participant.player?.displayName
+        || participant.player?.name
+        || "";
+    }
+
+    function hasParticipant(participant) {
+      const name = normalize(getParticipantName(participant));
+      return Boolean(name) && !["spielfrei", "bye", "freilos", "tbd"].includes(name);
+    }
+
+    function isFinished(match) {
+      if (!match || typeof match !== "object") return false;
+
+      const status = normalize(match.status || match.matchStatus || match.state || match.statusText);
+      const finishedStatuses = new Set([
+        "finished",
+        "completed",
+        "complete",
+        "closed",
+        "done",
+        "ended",
+        "end",
+        "beendet",
+        "abgeschlossen",
+        "gespielt"
+      ]);
+
+      return match.statusFinished === true
+        || match.finished === true
+        || match.isFinished === true
+        || match.completed === true
+        || Boolean(match.finishedAt || match.completedAt || match.endedAt)
+        || finishedStatuses.has(status);
+    }
+
+    function isOpenMatch(match) {
+      if (!match || typeof match !== "object") return false;
+
+      const hasPlayers = hasParticipant(match.participantHome) && hasParticipant(match.participantGuest);
+      if (!hasPlayers) return false;
+
+      return !isFinished(match);
+    }
+
+    function getBoard(match) {
+      return match.board
+        ?? match.boardNumber
+        ?? match.boardNr
+        ?? match.boardNo
+        ?? match.boardName
+        ?? match.targetBoard
+        ?? match.location
+        ?? "-";
+    }
+
+    function getRoundName(match) {
+      return match.roundName
+        || match.groupName
+        || match.phaseName
+        || match.gameName
+        || "";
+    }
+
+    function getPlayersFromMatches(matches) {
+      const players = new Set();
+
+      matches.forEach((match) => {
+        const homeName = getParticipantName(match.participantHome);
+        const awayName = getParticipantName(match.participantGuest);
+
+        if (homeName) players.add(homeName);
+        if (awayName) players.add(awayName);
+      });
+
+      return Array.from(players).sort((a, b) => a.localeCompare(b, "de"));
+    }
+
+    function updatePlayerFilter(matches) {
+      if (!playerFilter) return;
+
+      const currentValue = playerFilter.value;
+      const players = getPlayersFromMatches(matches);
+
+      playerFilter.innerHTML = '<option value="">Alle Spieler</option>';
+
+      players.forEach((player) => {
+        const option = document.createElement("option");
+        option.value = player;
+        option.textContent = player;
+        playerFilter.appendChild(option);
+      });
+
+      if (players.includes(currentValue)) {
+        playerFilter.value = currentValue;
+      }
+    }
+
+    function matchesSelectedPlayer(match, playerName) {
+      if (!playerName) return true;
+
+      return getParticipantName(match.participantHome) === playerName
+        || getParticipantName(match.participantGuest) === playerName;
+    }
+
+    function applyPlayerFilter() {
+      const selectedPlayer = playerFilter?.value || "";
+      const filteredMatches = openMatches.filter((match) => matchesSelectedPlayer(match, selectedPlayer));
+      renderGames(filteredMatches);
+    }
+
+    function renderGames(matches) {
+      gamesContainer.innerHTML = "";
+
+      if (!matches.length) {
+        gamesContainer.innerHTML = '<div class="message">Aktuell sind keine offenen Spiele vorhanden.</div>';
+        return;
+      }
+
+      matches.forEach((match) => {
+        const homeName = getParticipantName(match.participantHome);
+        const awayName = getParticipantName(match.participantGuest);
+
+        const card = document.createElement("article");
+        card.className = "game-card";
+
+        const boardEl = document.createElement("span");
+        boardEl.className = "board-badge";
+        boardEl.textContent = `Board ${getBoard(match)}`;
+
+        const lineEl = document.createElement("div");
+        lineEl.className = "match-line";
+
+        const homeEl = document.createElement("span");
+        homeEl.className = "team home";
+        homeEl.textContent = homeName;
+
+        const versusEl = document.createElement("span");
+        versusEl.className = "versus";
+        versusEl.textContent = "vs";
+
+        const awayEl = document.createElement("span");
+        awayEl.className = "team away";
+        awayEl.textContent = awayName;
+
+        lineEl.appendChild(homeEl);
+        lineEl.appendChild(versusEl);
+        lineEl.appendChild(awayEl);
+
+        card.appendChild(boardEl);
+        card.appendChild(lineEl);
+
+        gamesContainer.appendChild(card);
+      });
+    }
+
+    async function fetchJson(url) {
+      const response = await fetch(url, { cache: "no-store" });
+      if (!response.ok) throw new Error(`HTTP ${response.status}`);
+      return response.json();
+    }
+
+    function extractMatches(data) {
+      if (Array.isArray(data)) return data;
+      if (Array.isArray(data?.matches)) return data.matches;
+      if (Array.isArray(data?.data)) return data.data;
+      if (Array.isArray(data?.items)) return data.items;
+      if (Array.isArray(data?.games)) return data.games;
+      return [];
+    }
+
+    async function loadOpenGames() {
+      try {
+        const data = await fetchJson(ROUND_URL);
+        const matches = extractMatches(data)
+          .filter(isOpenMatch)
+          .sort((a, b) => {
+            const gameA = Number(a.gameNrRound ?? a.gameNr ?? a.matchNo ?? a.number ?? 0);
+            const gameB = Number(b.gameNrRound ?? b.gameNr ?? b.matchNo ?? b.number ?? 0);
+            return gameA - gameB;
+          });
+
+        openMatches = matches;
+        updatePlayerFilter(openMatches);
+        applyPlayerFilter();
+      } catch (error) {
+        console.error("Spielplan konnte nicht geladen werden:", error);
+        gamesContainer.innerHTML = `
+          <div class="message error">
+            Spielplan konnte nicht geladen werden. Bitte später erneut versuchen.
+          </div>
+        `;
+      }
+    }
+
+    if (playerFilter) {
+      playerFilter.addEventListener("change", applyPlayerFilter);
+    }
+
+    loadOpenGames();
+  </script>
+</body>
+</html>
