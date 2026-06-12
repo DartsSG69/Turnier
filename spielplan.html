@@ -396,11 +396,38 @@
     </main>
   </section>
 
-  <script src="spielplan-config.js"></script>
+  <script src="./spielplan-config.js"></script>
   <script>
-    const CFG = window.SG69_SPIELPLAN_CONFIG;
-    const EVENT_URL = window.SG69_SPIELPLAN_API.eventUrl(CFG.frontendBackendNo, CFG.eventId);
-    const GROUP_ROUND_URL = window.SG69_SPIELPLAN_API.roundUrl(CFG.frontendBackendNo, CFG.eventId, CFG.groupPhaseId, CFG.roundId);
+    const DEFAULT_SPIELPLAN_CONFIG = {
+      frontendBackendNo: 6,
+      eventId: 5934,
+      groupPhaseId: 8962,
+      groupPhaseName: "Gruppe",
+      groupPhaseModeCd: "group",
+      koPhaseName: "KO",
+      koPhaseModeCd: "ko",
+      roundId: 0,
+      refreshMs: 5000
+    };
+
+    const DEFAULT_SPIELPLAN_API = {
+      frontendBase(frontendBackendNo) {
+        return `https://backend${frontendBackendNo}.3k-darts.com/2k-backend${frontendBackendNo}/api/v1/frontend`;
+      },
+      eventUrl(frontendBackendNo, eventId) {
+        return `${this.frontendBase(frontendBackendNo)}/event/${eventId}`;
+      },
+      phaseUrl(frontendBackendNo, eventId, phaseId) {
+        return `${this.eventUrl(frontendBackendNo, eventId)}/phase/${phaseId}`;
+      },
+      roundUrl(frontendBackendNo, eventId, phaseId, roundId = 0) {
+        return `${this.phaseUrl(frontendBackendNo, eventId, phaseId)}/round/${roundId}`;
+      }
+    };
+
+    const CFG = window.SG69_SPIELPLAN_CONFIG || DEFAULT_SPIELPLAN_CONFIG;
+    const EVENT_URL = (window.SG69_SPIELPLAN_API || DEFAULT_SPIELPLAN_API).eventUrl(CFG.frontendBackendNo, CFG.eventId);
+    const GROUP_ROUND_URL = (window.SG69_SPIELPLAN_API || DEFAULT_SPIELPLAN_API).roundUrl(CFG.frontendBackendNo, CFG.eventId, CFG.groupPhaseId, CFG.roundId);
     const REFRESH_MS = CFG.refreshMs;
     const gamesContainer = document.getElementById("games");
     const playerFilter = document.getElementById("playerFilter");
@@ -682,7 +709,7 @@
 
       if (!koPhase?.id) return null;
 
-      return window.SG69_SPIELPLAN_API.roundUrl(CFG.frontendBackendNo, CFG.eventId, koPhase.id, CFG.roundId);
+      return (window.SG69_SPIELPLAN_API || DEFAULT_SPIELPLAN_API).roundUrl(CFG.frontendBackendNo, CFG.eventId, koPhase.id, CFG.roundId);
     }
 
     function extractMatches(data) {
@@ -762,7 +789,7 @@
         console.error("Spielplan konnte nicht geladen werden:", error);
         gamesContainer.innerHTML = `
           <div class="message error">
-            Spielplan konnte nicht geladen werden. Bitte später erneut versuchen.
+            Spielplan konnte nicht geladen werden. Bitte prüfe spielplan-config.js und die Turnier-IDs.
           </div>
         `;
       }
