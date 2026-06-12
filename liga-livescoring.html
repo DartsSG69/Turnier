@@ -506,6 +506,7 @@
     const params = new URLSearchParams(window.location.search);
     const MATCH_ID = params.get("matchId");
     const MATCH_TITLE = params.get("matchTitle");
+    const MATCH_RESULT = params.get("matchResult");
     const EVENT_URL = MATCH_ID ? `/api/liga-boards?matchId=${encodeURIComponent(MATCH_ID)}` : null;
     const REFRESH_MS = 1000;
 
@@ -788,6 +789,11 @@
     function updateMatchHeader(matches) {
       if (!matchHeaderEl) return;
 
+      if (MATCH_TITLE && MATCH_RESULT) {
+        matchHeaderEl.textContent = `${MATCH_TITLE}  ${MATCH_RESULT}`;
+        return;
+      }
+
       if (MATCH_TITLE) {
         matchHeaderEl.textContent = MATCH_TITLE;
         return;
@@ -805,7 +811,10 @@
       const name1 = p1.playerName || p1.displayName || "Heim";
       const name2 = p2.playerName || p2.displayName || "Gast";
 
-      matchHeaderEl.textContent = `${name1} - ${name2}`;
+      const legs1 = p1.legs ?? 0;
+      const legs2 = p2.legs ?? 0;
+
+      matchHeaderEl.textContent = `${name1} - ${name2}  ${legs1}:${legs2}`;
     }
 
     function renderBoards(matches) {
