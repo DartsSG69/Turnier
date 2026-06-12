@@ -158,9 +158,9 @@
 
     .game-card {
       display: grid;
-      grid-template-columns: auto minmax(0, 1fr);
+      grid-template-columns: 130px minmax(0, 1fr) 160px;
       align-items: center;
-      gap: 14px;
+      gap: 16px;
       min-height: 64px;
       padding: 14px 18px;
       border-radius: 18px;
@@ -177,7 +177,6 @@
       display: inline-flex;
       align-items: center;
       justify-content: center;
-      min-width: 96px;
       min-height: 42px;
       padding: 8px 12px;
       border-radius: 999px;
@@ -194,6 +193,7 @@
     .match-line {
       display: flex;
       align-items: center;
+      justify-content: center;
       min-width: 0;
       gap: 12px;
       font-size: clamp(1.05rem, 1.7vw, 1.45rem);
@@ -201,6 +201,53 @@
       letter-spacing: 0.01em;
       white-space: nowrap;
       overflow: hidden;
+      text-align: center;
+    }
+
+    .status-badge {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      min-height: 42px;
+      padding: 8px 12px;
+      border-radius: 999px;
+      color: #ffffff;
+      background: rgba(8, 18, 46, 0.72);
+      border: 1px solid var(--button-border);
+      font-size: 0.98rem;
+      font-weight: 900;
+      letter-spacing: 0.02em;
+      white-space: nowrap;
+      justify-self: end;
+    }
+
+    .status-badge.status-active {
+      color: #00ff66;
+      border-color: rgba(0, 255, 102, 0.50);
+      text-shadow: 0 0 12px rgba(0, 255, 102, 0.42);
+    }
+
+    .status-badge.status-open {
+      color: #ffffff;
+      border-color: rgba(255, 255, 255, 0.34);
+    }
+
+    .status-badge.status-pause {
+      color: #ffd54a;
+      border-color: rgba(255, 213, 74, 0.50);
+      text-shadow: 0 0 12px rgba(255, 213, 74, 0.30);
+    }
+
+    .status-badge.status-finish {
+      color: #ff4d4d;
+      border-color: rgba(255, 77, 77, 0.55);
+      text-shadow: 0 0 12px rgba(255, 77, 77, 0.38);
+    }
+
+    .board-badge.board-missing {
+      color: #ffd54a;
+      border-color: rgba(255, 213, 74, 0.55);
+      text-shadow: 0 0 12px rgba(255, 213, 74, 0.38);
     }
 
     .versus {
@@ -264,23 +311,29 @@
       }
 
       .game-card {
-        grid-template-columns: auto minmax(0, 1fr);
+        grid-template-columns: 82px minmax(0, 1fr) 112px;
+        gap: 8px;
         min-height: 58px;
-        padding: 12px;
+        padding: 10px;
         border-radius: 16px;
         text-align: left;
       }
 
       .board-badge {
-        min-width: 76px;
-        min-height: 36px;
-        font-size: 0.86rem;
-        padding: 7px 10px;
+        min-height: 34px;
+        font-size: 0.78rem;
+        padding: 6px 8px;
+      }
+
+      .status-badge {
+        min-height: 34px;
+        font-size: 0.76rem;
+        padding: 6px 8px;
       }
 
       .match-line {
-        gap: 8px;
-        font-size: 1rem;
+        gap: 6px;
+        font-size: 0.88rem;
       }
     }
   </style>
@@ -292,7 +345,7 @@
         <header class="header">
           <a class="back-link" href="index.html" aria-label="Zurück zur Startseite">← Zurück</a>
           <h1>Spielplan</h1>
-          <p class="subtitle">Offene Spiele der SG69 Flight Night</p>
+          <p class="subtitle">Spielplan der SG69 Flight Night</p>
 
           <div class="filter-row">
             <label class="filter-label" for="playerFilter">Spieler filtern</label>
@@ -303,7 +356,7 @@
         </header>
 
         <div id="games" class="game-list" aria-live="polite">
-          <div class="message">Offene Spiele werden geladen …</div>
+          <div class="message">Spielplan wird geladen …</div>
         </div>
       </div>
     </main>
@@ -365,10 +418,7 @@
     function isOpenMatch(match) {
       if (!match || typeof match !== "object") return false;
 
-      const hasPlayers = hasParticipant(match.participantHome) && hasParticipant(match.participantGuest);
-      if (!hasPlayers) return false;
-
-      return !isFinished(match);
+      return hasParticipant(match.participantHome) && hasParticipant(match.participantGuest);
     }
 
     function getBoard(match) {
@@ -380,6 +430,14 @@
         ?? match.targetBoard
         ?? match.location
         ?? "-";
+    }
+
+    function hasBoard(match) {
+      const board = getBoard(match);
+      return board !== undefined
+        && board !== null
+        && String(board).trim() !== ""
+        && String(board).trim() !== "-";
     }
 
     function getRoundName(match) {
@@ -437,11 +495,53 @@
       renderGames(filteredMatches);
     }
 
+    function getStatusCd(match) {
+      return String(match?.statusCd || match?.status || match?.matchStatus || "").trim();
+    }
+
+    function normalizeStatus(statusCd) {
+      const status = normalize(statusCd);
+
+      if (status === "active" || status === "activ" || status === "laufend") return "active";
+      if (status === "open" || status === "offen") return "open";
+      if (status === "pause" || status === "paused" || status === "pausiert") return "pause";
+      if (status === "finish" || status === "finished" || status === "beendet" || status === "completed") return "finish";
+
+      return status || "open";
+    }
+
+    function getStatusLabel(match) {
+      const status = normalizeStatus(getStatusCd(match));
+
+      if (status === "active") return "Spiel läuft";
+      if (status === "open") return "Spiel offen";
+      if (status === "pause") return "Spiel pausiert";
+      if (status === "finish") return "Spiel beendet";
+
+      return getStatusCd(match) || "Spiel offen";
+    }
+
+    function getStatusClass(match) {
+      return `status-${normalizeStatus(getStatusCd(match))}`;
+    }
+
+    function getStatusSortValue(match) {
+      const order = {
+        active: 0,
+        open: 1,
+        pause: 2,
+        finish: 3
+      };
+
+      const status = normalizeStatus(getStatusCd(match));
+      return order[status] ?? 99;
+    }
+
     function renderGames(matches) {
       gamesContainer.innerHTML = "";
 
       if (!matches.length) {
-        gamesContainer.innerHTML = '<div class="message">Aktuell sind keine offenen Spiele vorhanden.</div>';
+        gamesContainer.innerHTML = '<div class="message">Aktuell sind keine Spiele vorhanden.</div>';
         return;
       }
 
@@ -453,8 +553,8 @@
         card.className = "game-card";
 
         const boardEl = document.createElement("span");
-        boardEl.className = "board-badge";
-        boardEl.textContent = `Board ${getBoard(match)}`;
+        boardEl.className = `board-badge ${hasBoard(match) ? "" : "board-missing"}`.trim();
+        boardEl.textContent = hasBoard(match) ? `Board ${getBoard(match)}` : "Board offen";
 
         const lineEl = document.createElement("div");
         lineEl.className = "match-line";
@@ -471,12 +571,17 @@
         awayEl.className = "team away";
         awayEl.textContent = awayName;
 
+        const statusEl = document.createElement("span");
+        statusEl.className = `status-badge ${getStatusClass(match)}`;
+        statusEl.textContent = getStatusLabel(match);
+
         lineEl.appendChild(homeEl);
         lineEl.appendChild(versusEl);
         lineEl.appendChild(awayEl);
 
         card.appendChild(boardEl);
         card.appendChild(lineEl);
+        card.appendChild(statusEl);
 
         gamesContainer.appendChild(card);
       });
@@ -503,6 +608,15 @@
         const matches = extractMatches(data)
           .filter(isOpenMatch)
           .sort((a, b) => {
+            const statusDiff = getStatusSortValue(a) - getStatusSortValue(b);
+            if (statusDiff !== 0) return statusDiff;
+
+            const boardA = Number(getBoard(a));
+            const boardB = Number(getBoard(b));
+            if (Number.isFinite(boardA) && Number.isFinite(boardB) && boardA !== boardB) {
+              return boardA - boardB;
+            }
+
             const gameA = Number(a.gameNrRound ?? a.gameNr ?? a.matchNo ?? a.number ?? 0);
             const gameB = Number(b.gameNrRound ?? b.gameNr ?? b.matchNo ?? b.number ?? 0);
             return gameA - gameB;
