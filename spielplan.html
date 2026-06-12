@@ -766,6 +766,9 @@
             const statusDiff = getStatusSortValue(a) - getStatusSortValue(b);
             if (statusDiff !== 0) return statusDiff;
 
+            const boardMissingDiff = Number(!hasBoard(a)) - Number(!hasBoard(b));
+            if (boardMissingDiff !== 0) return boardMissingDiff;
+
             const boardA = Number(getBoard(a));
             const boardB = Number(getBoard(b));
             if (Number.isFinite(boardA) && Number.isFinite(boardB) && boardA !== boardB) {
