@@ -297,8 +297,51 @@
     function getMatchUrl(match) {
       const homeName = match?.participantHome?.displayName || match?.home?.displayName || match?.homeTeam?.displayName || match?.participantHome?.name || 'Heim';
       const guestName = match?.participantGuest?.displayName || match?.guest?.displayName || match?.awayTeam?.displayName || match?.participantGuest?.name || 'Gast';
+
+      const homeResult =
+        match?.participantHomeResult ??
+        match?.homeResult ??
+        match?.homeScore ??
+        match?.scoreHome ??
+        match?.setsHome ??
+        match?.legsHome ??
+        match?.resultHome ??
+        match?.participantHome?.result ??
+        match?.participantHome?.score ??
+        match?.participantHome?.sets ??
+        match?.participantHome?.legs ??
+        '';
+
+      const guestResult =
+        match?.participantGuestResult ??
+        match?.guestResult ??
+        match?.guestScore ??
+        match?.scoreGuest ??
+        match?.setsGuest ??
+        match?.legsGuest ??
+        match?.resultGuest ??
+        match?.participantGuest?.result ??
+        match?.participantGuest?.score ??
+        match?.participantGuest?.sets ??
+        match?.participantGuest?.legs ??
+        '';
+
+      let result = '';
+      if (homeResult !== '' && homeResult !== null && homeResult !== undefined && guestResult !== '' && guestResult !== null && guestResult !== undefined) {
+        result = `${homeResult}:${guestResult}`;
+      }
+
       const title = `${homeName} - ${guestName}`;
-      return `liga-livescoring.html?matchId=${encodeURIComponent(match.id)}&matchTitle=${encodeURIComponent(title)}`;
+      const params = new URLSearchParams({
+        matchId: String(match.id),
+        matchTitle: title
+      });
+
+      if (result) {
+        params.set('matchResult', result);
+      }
+
+      return `liga-livescoring.html?${params.toString()}`;
     }
 
     function renderGames(games) {
