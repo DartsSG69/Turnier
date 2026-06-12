@@ -295,7 +295,10 @@
     }
 
     function getMatchUrl(match) {
-      return `liga-livescoring.html?matchId=${encodeURIComponent(match.id)}`;
+      const homeName = match?.participantHome?.displayName || match?.home?.displayName || match?.homeTeam?.displayName || match?.participantHome?.name || 'Heim';
+      const guestName = match?.participantGuest?.displayName || match?.guest?.displayName || match?.awayTeam?.displayName || match?.participantGuest?.name || 'Gast';
+      const title = `${homeName} - ${guestName}`;
+      return `liga-livescoring.html?matchId=${encodeURIComponent(match.id)}&matchTitle=${encodeURIComponent(title)}`;
     }
 
     function renderGames(games) {
