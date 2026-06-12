@@ -158,7 +158,7 @@
 
     .game-card {
       display: grid;
-      grid-template-columns: 130px minmax(0, 1fr) 160px;
+      grid-template-columns: 130px minmax(0, 1fr) 110px 160px;
       align-items: center;
       gap: 16px;
       min-height: 64px;
@@ -202,6 +202,24 @@
       white-space: nowrap;
       overflow: hidden;
       text-align: center;
+    }
+
+    .result-badge {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      min-height: 42px;
+      padding: 8px 12px;
+      border-radius: 999px;
+      color: #00ff66;
+      background: rgba(8, 18, 46, 0.72);
+      border: 1px solid rgba(0, 255, 102, 0.44);
+      font-size: 1.08rem;
+      font-weight: 1000;
+      letter-spacing: 0.03em;
+      white-space: nowrap;
+      justify-self: center;
+      text-shadow: 0 0 12px rgba(0, 255, 102, 0.42);
     }
 
     .status-badge {
@@ -311,7 +329,7 @@
       }
 
       .game-card {
-        grid-template-columns: 82px minmax(0, 1fr) 112px;
+        grid-template-columns: 76px minmax(0, 1fr) 58px 108px;
         gap: 8px;
         min-height: 58px;
         padding: 10px;
@@ -327,7 +345,13 @@
 
       .status-badge {
         min-height: 34px;
-        font-size: 0.76rem;
+        font-size: 0.72rem;
+        padding: 6px 8px;
+      }
+
+      .result-badge {
+        min-height: 34px;
+        font-size: 0.86rem;
         padding: 6px 8px;
       }
 
@@ -345,6 +369,7 @@
         <header class="header">
           <a class="back-link" href="index.html" aria-label="Zurück zur Startseite">← Zurück</a>
           <h1>Spielplan</h1>
+          <p class="subtitle">Spielplan der SG69 Flight Night</p>
 
           <div class="filter-row">
             <label class="filter-label" for="playerFilter">Spieler filtern</label>
@@ -496,6 +521,17 @@
       renderGames(filteredMatches);
     }
 
+    function getResult(match) {
+      const homeLegs = match?.legsHome;
+      const awayLegs = match?.legsAway;
+
+      if (homeLegs !== undefined && homeLegs !== null && awayLegs !== undefined && awayLegs !== null) {
+        return `${homeLegs}:${awayLegs}`;
+      }
+
+      return "-:-";
+    }
+
     function getStatusCd(match) {
       return String(match?.statusCd || match?.status || match?.matchStatus || "").trim();
     }
@@ -572,6 +608,10 @@
         awayEl.className = "team away";
         awayEl.textContent = awayName;
 
+        const resultEl = document.createElement("span");
+        resultEl.className = "result-badge";
+        resultEl.textContent = getResult(match);
+
         const statusEl = document.createElement("span");
         statusEl.className = `status-badge ${getStatusClass(match)}`;
         statusEl.textContent = getStatusLabel(match);
@@ -582,6 +622,7 @@
 
         card.appendChild(boardEl);
         card.appendChild(lineEl);
+        card.appendChild(resultEl);
         card.appendChild(statusEl);
 
         gamesContainer.appendChild(card);
