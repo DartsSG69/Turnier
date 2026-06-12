@@ -7,6 +7,7 @@
   <style>
     :root {
       --bg: #050b22;
+      --bg-image: url("./sg_flight_night_hintergrundbild.png");
       --text: #ffffff;
       --muted: rgba(255, 255, 255, 0.72);
       --overlay-dark: rgba(3, 8, 24, 0.34);
@@ -49,7 +50,7 @@
         linear-gradient(180deg, var(--overlay-dark), rgba(4, 10, 30, 0.46)),
         radial-gradient(circle at center, transparent 0%, rgba(2, 7, 22, 0.14) 55%, rgba(2, 7, 22, 0.36) 100%),
         linear-gradient(135deg, var(--overlay-blue), transparent 45%),
-        url("sg_flight_night_hintergrundbild.png");
+        var(--bg-image);
       background-size: cover;
       background-position: center center;
       background-repeat: no-repeat;
@@ -379,6 +380,7 @@
         <header class="header">
           <a class="back-link" href="index.html" aria-label="Zurück zur Startseite">← Zurück</a>
           <h1>Spielplan</h1>
+          <p class="subtitle">Spielplan der SG69 Flight Night</p>
 
           <div class="filter-row">
             <label class="filter-label" for="playerFilter">Spieler filtern</label>
@@ -762,8 +764,18 @@
           .flatMap((data) => extractMatches(data))
           .filter(isOpenMatch)
           .sort((a, b) => {
+            const statusA = normalizeStatus(getStatusCd(a));
+            const statusB = normalizeStatus(getStatusCd(b));
+
             const statusDiff = getStatusSortValue(a) - getStatusSortValue(b);
             if (statusDiff !== 0) return statusDiff;
+
+            const gameA = Number(a.gameNrRound ?? a.gameNr ?? a.matchNo ?? a.number ?? 0);
+            const gameB = Number(b.gameNrRound ?? b.gameNr ?? b.matchNo ?? b.number ?? 0);
+
+            if (statusA === "finish" && statusB === "finish") {
+              return gameA - gameB;
+            }
 
             const boardMissingDiff = Number(!hasBoard(a)) - Number(!hasBoard(b));
             if (boardMissingDiff !== 0) return boardMissingDiff;
@@ -774,8 +786,6 @@
               return boardA - boardB;
             }
 
-            const gameA = Number(a.gameNrRound ?? a.gameNr ?? a.matchNo ?? a.number ?? 0);
-            const gameB = Number(b.gameNrRound ?? b.gameNr ?? b.matchNo ?? b.number ?? 0);
             return gameA - gameB;
           });
 
