@@ -37,6 +37,8 @@
     body {
       min-height: 100vh;
       color: var(--text);
+      overflow-y: auto;
+      overflow-x: hidden;
     }
 
     .hero {
@@ -154,6 +156,10 @@
       gap: 14px;
       width: 100%;
       align-items: stretch;
+      overflow-x: auto;
+      overflow-y: visible;
+      -webkit-overflow-scrolling: touch;
+      padding-bottom: 8px;
     }
 
     .game-card {
@@ -202,24 +208,6 @@
       white-space: nowrap;
       overflow: hidden;
       text-align: center;
-    }
-
-    .result-badge {
-      display: inline-flex;
-      align-items: center;
-      justify-content: center;
-      min-height: 42px;
-      padding: 8px 12px;
-      border-radius: 999px;
-      color: #00ff66;
-      background: rgba(8, 18, 46, 0.72);
-      border: 1px solid rgba(0, 255, 102, 0.44);
-      font-size: 1.08rem;
-      font-weight: 1000;
-      letter-spacing: 0.03em;
-      white-space: nowrap;
-      justify-self: center;
-      text-shadow: 0 0 12px rgba(0, 255, 102, 0.42);
     }
 
     .status-badge {
@@ -284,6 +272,7 @@
       letter-spacing: inherit;
       overflow: hidden;
       text-overflow: ellipsis;
+      white-space: nowrap;
     }
 
     .team.home,
@@ -309,7 +298,15 @@
 
     @media (max-width: 760px) {
       .hero {
+        min-height: 100vh;
+        height: auto;
+        align-items: flex-start;
         padding: 20px 12px 28px;
+      }
+
+      .shell {
+        min-height: auto;
+        align-items: start;
       }
 
       .header {
@@ -326,11 +323,16 @@
       .game-list {
         grid-template-columns: 1fr;
         gap: 10px;
+        overflow-x: auto;
+        overflow-y: visible;
+        -webkit-overflow-scrolling: touch;
+        padding-bottom: 10px;
       }
 
       .game-card {
-        grid-template-columns: 76px minmax(0, 1fr) 58px 108px;
+        grid-template-columns: 82px 360px 70px 118px;
         gap: 8px;
+        min-width: 660px;
         min-height: 58px;
         padding: 10px;
         border-radius: 16px;
@@ -343,21 +345,29 @@
         padding: 6px 8px;
       }
 
-      .status-badge {
+      .result-badge {
         min-height: 34px;
-        font-size: 0.72rem;
+        font-size: 0.9rem;
         padding: 6px 8px;
       }
 
-      .result-badge {
+      .status-badge {
         min-height: 34px;
-        font-size: 0.86rem;
+        font-size: 0.74rem;
         padding: 6px 8px;
       }
 
       .match-line {
-        gap: 6px;
-        font-size: 0.88rem;
+        gap: 8px;
+        font-size: 0.96rem;
+        white-space: nowrap;
+        overflow: hidden;
+      }
+
+      .team {
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
       }
     }
   </style>
@@ -369,6 +379,7 @@
         <header class="header">
           <a class="back-link" href="index.html" aria-label="Zurück zur Startseite">← Zurück</a>
           <h1>Spielplan</h1>
+          <p class="subtitle">Spielplan der SG69 Flight Night</p>
 
           <div class="filter-row">
             <label class="filter-label" for="playerFilter">Spieler filtern</label>
