@@ -1,0 +1,399 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Sixty9Darters 3 - Spiele</title>
+  <style>
+    :root {
+      --bg: #050b22;
+      --text: #ffffff;
+      --muted: rgba(255, 255, 255, 0.72);
+      --overlay-dark: rgba(3, 8, 24, 0.34);
+      --overlay-blue: rgba(21, 49, 130, 0.16);
+      --button-bg: rgba(8, 18, 46, 0.82);
+      --button-border: rgba(134, 170, 255, 0.24);
+      --button-hover: rgba(33, 72, 190, 0.88);
+      --button-text: #ffffff;
+      --panel-bg: rgba(5, 12, 34, 0.64);
+      --game-bg: rgba(8, 18, 46, 0.82);
+      --game-bg-soft: rgba(8, 18, 46, 0.58);
+      --accent: rgba(134, 170, 255, 0.62);
+      --own-team-bg: rgba(33, 72, 190, 0.42);
+      --error-bg: rgba(140, 20, 20, 0.40);
+      --error-border: rgba(255, 120, 120, 0.35);
+    }
+
+    * { box-sizing: border-box; }
+
+    html, body {
+      margin: 0;
+      width: 100%;
+      min-height: 100%;
+      font-family: Arial, Helvetica, sans-serif;
+      background: var(--bg);
+    }
+
+    body {
+      min-height: 100vh;
+      color: var(--text);
+    }
+
+    .hero {
+      position: relative;
+      min-height: 100vh;
+      isolation: isolate;
+      background-image:
+        linear-gradient(180deg, var(--overlay-dark), rgba(4, 10, 30, 0.46)),
+        radial-gradient(circle at center, transparent 0%, rgba(2, 7, 22, 0.14) 55%, rgba(2, 7, 22, 0.36) 100%),
+        linear-gradient(135deg, var(--overlay-blue), transparent 45%),
+        url("sg_flight_night_hintergrundbild.png");
+      background-size: cover;
+      background-position: center center;
+      background-repeat: no-repeat;
+      padding: 28px 22px 40px;
+      display: flex;
+      align-items: flex-end;
+      justify-content: center;
+    }
+
+    .shell {
+      width: min(1100px, 100%);
+      min-height: calc(100vh - 80px);
+      margin: 0 auto;
+      display: grid;
+      align-items: end;
+    }
+
+    .content {
+      width: 100%;
+      padding-bottom: 20px;
+    }
+
+    .header {
+      width: 100%;
+      margin-bottom: 18px;
+      padding: 18px 22px;
+      border-radius: 22px;
+      background: var(--panel-bg);
+      border: 1px solid var(--button-border);
+      backdrop-filter: blur(12px);
+      box-shadow:
+        0 18px 40px rgba(0, 0, 0, 0.28),
+        inset 0 1px 0 rgba(255,255,255,0.05);
+    }
+
+    .back-link {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      margin-bottom: 14px;
+      color: var(--button-text);
+      text-decoration: none;
+      font-size: 0.95rem;
+      font-weight: 700;
+      opacity: 0.86;
+    }
+
+    .back-link:hover { opacity: 1; }
+
+    h1 {
+      margin: 0;
+      font-size: clamp(1.8rem, 3vw, 3rem);
+      line-height: 1.1;
+      letter-spacing: 0.01em;
+    }
+
+    .subtitle {
+      margin: 10px 0 0;
+      color: var(--muted);
+      font-size: clamp(0.95rem, 1.4vw, 1.1rem);
+    }
+
+    .game-list {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 12px;
+      width: 100%;
+    }
+
+    .game-card {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
+      align-items: center;
+      gap: 14px;
+      min-height: 78px;
+      padding: 16px 18px;
+      border-radius: 18px;
+      text-decoration: none;
+      color: var(--button-text);
+      background: var(--game-bg);
+      border: 1px solid var(--button-border);
+      backdrop-filter: blur(12px);
+      box-shadow:
+        0 14px 30px rgba(0, 0, 0, 0.24),
+        inset 0 1px 0 rgba(255,255,255,0.05);
+      transition:
+        transform 0.18s ease,
+        background 0.18s ease,
+        border-color 0.18s ease,
+        box-shadow 0.18s ease;
+    }
+
+    .game-card:hover {
+      transform: translateY(-2px);
+      background: var(--button-hover);
+      border-color: rgba(170, 195, 255, 0.38);
+      box-shadow:
+        0 20px 42px rgba(0, 0, 0, 0.34),
+        inset 0 1px 0 rgba(255,255,255,0.08);
+    }
+
+    .game-card:active { transform: translateY(0); }
+
+    .game-card:focus-visible {
+      outline: 3px solid rgba(255, 255, 255, 0.75);
+      outline-offset: 4px;
+    }
+
+    .team {
+      min-width: 0;
+      padding: 8px 10px;
+      border-radius: 12px;
+      font-size: clamp(1.05rem, 1.7vw, 1.45rem);
+      font-weight: 800;
+      letter-spacing: 0.01em;
+      overflow-wrap: anywhere;
+    }
+
+    .team.home { text-align: right; }
+    .team.away { text-align: left; }
+    .team.own { background: var(--own-team-bg); }
+
+    .score {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      min-width: 72px;
+      min-height: 42px;
+      padding: 8px 12px;
+      border-radius: 999px;
+      color: #ffffff;
+      background: var(--game-bg-soft);
+      border: 1px solid var(--accent);
+      font-weight: 900;
+      letter-spacing: 0.04em;
+      white-space: nowrap;
+    }
+
+    .round-label {
+      grid-column: 1 / -1;
+      margin-top: 2px;
+      color: var(--muted);
+      font-size: 0.86rem;
+      font-weight: 700;
+      text-align: center;
+    }
+
+    .message {
+      width: 100%;
+      padding: 20px 22px;
+      border-radius: 18px;
+      background: var(--panel-bg);
+      border: 1px solid var(--button-border);
+      color: var(--button-text);
+      backdrop-filter: blur(12px);
+    }
+
+    .message.error {
+      background: var(--error-bg);
+      border-color: var(--error-border);
+    }
+
+    @media (max-width: 640px) {
+      .hero {
+        padding: 20px 12px 28px;
+      }
+
+      .header {
+        border-radius: 18px;
+        padding: 16px;
+      }
+
+      .game-list {
+        gap: 10px;
+      }
+
+      .game-card {
+        grid-template-columns: 1fr;
+        min-height: auto;
+        padding: 16px;
+        border-radius: 16px;
+        text-align: center;
+      }
+
+      .team.home,
+      .team.away {
+        text-align: center;
+      }
+
+      .score {
+        justify-self: center;
+        min-width: 58px;
+        min-height: 36px;
+      }
+    }
+  </style>
+</head>
+<body>
+  <section class="hero" aria-label="Sixty9Darters 3 Spiele">
+    <main class="shell">
+      <div class="content">
+        <header class="header">
+          <a class="back-link" href="index.html" aria-label="Zurück zur Startseite">← Zurück</a>
+          <h1>Sixty9Darters 3</h1>
+          <p class="subtitle">Spiele der Sixty 9 Darters 2</p>
+        </header>
+
+        <div id="games" class="game-list" aria-live="polite">
+          <div class="message">Spiele werden geladen …</div>
+        </div>
+      </div>
+    </main>
+  </section>
+
+  <script>
+    const EVENT_ID = 12059;
+    const PHASE_ID = 19982;
+    const TEAM_ID = 264770;
+    const TEAM_DISPLAY_NAME = 'Sixty 9 Darters 2';
+    const BASE_URL = `https://backend4.3k-darts.com/2k-backend4/api/v1/frontend/event/${EVENT_ID}/phase/${PHASE_ID}`;
+    const gamesContainer = document.getElementById('games');
+
+    function normalize(value) {
+      return String(value || '')
+        .toLowerCase()
+        .replace(/\s+/g, ' ')
+        .trim();
+    }
+
+    function isOwnTeam(participant) {
+      if (!participant || typeof participant !== 'object') return false;
+      return participant.id === TEAM_ID || normalize(participant.displayName) === normalize(TEAM_DISPLAY_NAME);
+    }
+
+    function getParticipantName(participant) {
+      if (!participant || typeof participant !== 'object') return '';
+      return participant.displayName
+        || participant.name
+        || participant.teamSeason?.name
+        || '';
+    }
+
+    function isRelevantMatch(match) {
+      return isOwnTeam(match.participantHome) || isOwnTeam(match.participantGuest);
+    }
+
+    function getScore(match) {
+      const hasSets = Number.isFinite(match.setsHome) && Number.isFinite(match.setsAway);
+      if (hasSets) return `${match.setsHome}:${match.setsAway}`;
+      return 'vs';
+    }
+
+    function getMatchUrl(match, roundId) {
+      // Die Round-URL ist sicher vorhanden. Die Match-ID wird als Hash angehängt,
+      // damit jedes Spiel eindeutig anklickbar bleibt.
+      return `${BASE_URL}/round/${roundId}#match-${match.id}`;
+    }
+
+    function renderGames(games) {
+      gamesContainer.innerHTML = '';
+
+      if (!games.length) {
+        gamesContainer.innerHTML = `<div class="message">Keine Spiele für ${TEAM_DISPLAY_NAME} gefunden.</div>`;
+        return;
+      }
+
+      games.forEach(({ match, round }) => {
+        const homeName = getParticipantName(match.participantHome) || 'spielfrei';
+        const awayName = getParticipantName(match.participantGuest) || 'spielfrei';
+        const homeIsOwnTeam = isOwnTeam(match.participantHome);
+        const awayIsOwnTeam = isOwnTeam(match.participantGuest);
+
+        const card = document.createElement('a');
+        card.className = 'game-card';
+        card.href = getMatchUrl(match, round.id);
+        card.target = '_blank';
+        card.rel = 'noopener noreferrer';
+
+        const homeEl = document.createElement('span');
+        homeEl.className = `team home${homeIsOwnTeam ? ' own' : ''}`;
+        homeEl.textContent = homeName;
+
+        const scoreEl = document.createElement('span');
+        scoreEl.className = 'score';
+        scoreEl.textContent = getScore(match);
+
+        const awayEl = document.createElement('span');
+        awayEl.className = `team away${awayIsOwnTeam ? ' own' : ''}`;
+        awayEl.textContent = awayName;
+
+        const roundEl = document.createElement('span');
+        roundEl.className = 'round-label';
+        roundEl.textContent = round.name || `Spieltag ${Number(round.index || 0) + 1}`;
+
+        card.appendChild(homeEl);
+        card.appendChild(scoreEl);
+        card.appendChild(awayEl);
+        card.appendChild(roundEl);
+        gamesContainer.appendChild(card);
+      });
+    }
+
+    async function fetchJson(url) {
+      const response = await fetch(url, { cache: 'no-store' });
+      if (!response.ok) throw new Error(`HTTP ${response.status}: ${url}`);
+      return response.json();
+    }
+
+    async function loadGames() {
+      try {
+        const phase = await fetchJson(BASE_URL);
+        const rounds = Array.isArray(phase.rounds) ? phase.rounds.slice() : [];
+
+        if (!rounds.length) {
+          gamesContainer.innerHTML = '<div class="message">Keine Spieltage gefunden.</div>';
+          return;
+        }
+
+        const sortedRounds = rounds.sort((a, b) => (a.index ?? 0) - (b.index ?? 0));
+        const roundResults = await Promise.allSettled(
+          sortedRounds.map(async (round) => {
+            const roundData = await fetchJson(`${BASE_URL}/round/${round.id}`);
+            const matches = Array.isArray(roundData.matches) ? roundData.matches : [];
+            return matches
+              .filter(isRelevantMatch)
+              .sort((a, b) => (a.gameNrRound ?? a.gameNr ?? 0) - (b.gameNrRound ?? b.gameNr ?? 0))
+              .map((match) => ({ match, round }));
+          })
+        );
+
+        const games = roundResults
+          .filter((result) => result.status === 'fulfilled')
+          .flatMap((result) => result.value);
+
+        renderGames(games);
+      } catch (error) {
+        console.error('Spiele konnten nicht geladen werden:', error);
+        gamesContainer.innerHTML = `
+          <div class="message error">
+            Spiele konnten nicht geladen werden. Bitte später erneut versuchen.
+          </div>
+        `;
+      }
+    }
+
+    loadGames();
+  </script>
+</body>
+</html>
