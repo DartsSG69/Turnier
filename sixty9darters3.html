@@ -214,7 +214,7 @@
       }
 
       .game-list {
-        grid-template-columns: 1fr !important;
+        grid-template-columns: 1fr;
         gap: 10px;
       }
 
@@ -294,8 +294,10 @@
       return 'vs';
     }
 
-    function getMatchUrl(match) {
-      return `liga-livescoring.html?matchId=${encodeURIComponent(match.id)}`;
+    function getMatchUrl(match, roundId) {
+      // Die Round-URL ist sicher vorhanden. Die Match-ID wird als Hash angehängt,
+      // damit jedes Spiel eindeutig anklickbar bleibt.
+      return `${BASE_URL}/round/${roundId}#match-${match.id}`;
     }
 
     function renderGames(games) {
@@ -314,8 +316,9 @@
 
         const card = document.createElement('a');
         card.className = 'game-card';
-        card.href = getMatchUrl(match);
-        card.setAttribute('aria-label', `Livescoring für ${homeName} gegen ${awayName} öffnen`);
+        card.href = getMatchUrl(match, round.id);
+        card.target = '_blank';
+        card.rel = 'noopener noreferrer';
 
         const homeEl = document.createElement('span');
         homeEl.className = `team home${homeIsOwnTeam ? ' own' : ''}`;
