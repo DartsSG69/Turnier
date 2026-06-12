@@ -9,9 +9,9 @@
 */
 window.SG69_SPIELPLAN_CONFIG = {
   frontendBackendNo: 6,
-  eventId: 5934,
+  eventId: 983,
 
-  groupPhaseId: 8962,
+  groupPhaseId: 7923,
   groupPhaseName: "Gruppe",
   groupPhaseModeCd: "group",
 
