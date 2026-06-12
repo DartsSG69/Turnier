@@ -396,9 +396,12 @@
     </main>
   </section>
 
+  <script src="spielplan-config.js"></script>
   <script>
-    const ROUND_URL = "https://backend6.3k-darts.com/2k-backend6/api/v1/frontend/event/5934/phase/8962/round/0";
-    const REFRESH_MS = 5000;
+    const CFG = window.SG69_SPIELPLAN_CONFIG;
+    const EVENT_URL = window.SG69_SPIELPLAN_API.eventUrl(CFG.frontendBackendNo, CFG.eventId);
+    const GROUP_ROUND_URL = window.SG69_SPIELPLAN_API.roundUrl(CFG.frontendBackendNo, CFG.eventId, CFG.groupPhaseId, CFG.roundId);
+    const REFRESH_MS = CFG.refreshMs;
     const gamesContainer = document.getElementById("games");
     const playerFilter = document.getElementById("playerFilter");
     let openMatches = [];
@@ -646,19 +649,91 @@
       return response.json();
     }
 
+    function getPhases(data) {
+      if (Array.isArray(data?.phases)) return data.phases;
+      if (Array.isArray(data?.data?.phases)) return data.data.phases;
+      if (Array.isArray(data?.event?.phases)) return data.event.phases;
+      return [];
+    }
+
+    function findPhase(phases, name, modeCd) {
+      return phases.find((phase) =>
+        normalize(phase?.name) === normalize(name)
+        && normalize(phase?.modeCd) === normalize(modeCd)
+      );
+    }
+
+    function isKoPhaseActive(eventData) {
+      const phases = getPhases(eventData);
+      const groupPhase = findPhase(phases, CFG.groupPhaseName, CFG.groupPhaseModeCd);
+      const koPhase = findPhase(phases, CFG.koPhaseName, CFG.koPhaseModeCd);
+
+      return Boolean(
+        groupPhase
+        && koPhase
+        && normalize(groupPhase.statusCd) === "finish"
+        && normalize(koPhase.statusCd) === "active"
+      );
+    }
+
+    function getKoRoundUrl(eventData) {
+      const phases = getPhases(eventData);
+      const koPhase = findPhase(phases, CFG.koPhaseName, CFG.koPhaseModeCd);
+
+      if (!koPhase?.id) return null;
+
+      return window.SG69_SPIELPLAN_API.roundUrl(CFG.frontendBackendNo, CFG.eventId, koPhase.id, CFG.roundId);
+    }
+
     function extractMatches(data) {
       if (Array.isArray(data)) return data;
       if (Array.isArray(data?.matches)) return data.matches;
       if (Array.isArray(data?.data)) return data.data;
       if (Array.isArray(data?.items)) return data.items;
       if (Array.isArray(data?.games)) return data.games;
-      return [];
+
+      const nestedMatches = [];
+
+      const collectFrom = (value) => {
+        if (!value || typeof value !== "object") return;
+
+        if (Array.isArray(value.matches)) nestedMatches.push(...value.matches);
+        if (Array.isArray(value.games)) nestedMatches.push(...value.games);
+        if (Array.isArray(value.items)) nestedMatches.push(...value.items);
+
+        if (Array.isArray(value.groups)) value.groups.forEach(collectFrom);
+        if (Array.isArray(value.rounds)) value.rounds.forEach(collectFrom);
+      };
+
+      collectFrom(data);
+
+      return nestedMatches;
     }
 
     async function loadOpenGames() {
       try {
-        const data = await fetchJson(ROUND_URL);
-        const matches = extractMatches(data)
+        const eventData = await fetchJson(EVENT_URL);
+
+        const roundUrls = [GROUP_ROUND_URL];
+
+        if (isKoPhaseActive(eventData)) {
+          const koRoundUrl = getKoRoundUrl(eventData);
+          if (koRoundUrl) roundUrls.push(koRoundUrl);
+        }
+
+        const roundResults = await Promise.all(
+          roundUrls.map(async (url) => {
+            try {
+              return await fetchJson(url);
+            } catch (error) {
+              console.warn("Round konnte nicht geladen werden:", url, error);
+              return null;
+            }
+          })
+        );
+
+        const matches = roundResults
+          .flatMap((data) => extractMatches(data))
           .filter(isOpenMatch)
           .sort((a, b) => {
             const statusDiff = getStatusSortValue(a) - getStatusSortValue(b);
