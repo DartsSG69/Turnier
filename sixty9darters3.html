@@ -112,9 +112,10 @@
 
     .game-list {
       display: grid;
-      grid-template-columns: 1fr;
-      gap: 12px;
+      grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+      gap: 14px;
       width: 100%;
+      align-items: stretch;
     }
 
     .game-card {
@@ -186,16 +187,8 @@
       white-space: nowrap;
     }
 
-    .round-label {
-      grid-column: 1 / -1;
-      margin-top: 2px;
-      color: var(--muted);
-      font-size: 0.86rem;
-      font-weight: 700;
-      text-align: center;
-    }
-
     .message {
+      grid-column: 1 / -1;
       width: 100%;
       padding: 20px 22px;
       border-radius: 18px;
@@ -210,7 +203,7 @@
       border-color: var(--error-border);
     }
 
-    @media (max-width: 640px) {
+    @media (max-width: 760px) {
       .hero {
         padding: 20px 12px 28px;
       }
@@ -221,6 +214,7 @@
       }
 
       .game-list {
+        grid-template-columns: 1fr;
         gap: 10px;
       }
 
@@ -252,7 +246,7 @@
         <header class="header">
           <a class="back-link" href="index.html" aria-label="Zurück zur Startseite">← Zurück</a>
           <h1>Sixty9Darters 3</h1>
-          <p class="subtitle">Spiele der Sixty 9 Darters 2</p>
+          <p class="subtitle">Alle Spiele der Sixty 9 Darters 2</p>
         </header>
 
         <div id="games" class="game-list" aria-live="polite">
@@ -338,14 +332,9 @@
         awayEl.className = `team away${awayIsOwnTeam ? ' own' : ''}`;
         awayEl.textContent = awayName;
 
-        const roundEl = document.createElement('span');
-        roundEl.className = 'round-label';
-        roundEl.textContent = round.name || `Spieltag ${Number(round.index || 0) + 1}`;
-
         card.appendChild(homeEl);
         card.appendChild(scoreEl);
         card.appendChild(awayEl);
-        card.appendChild(roundEl);
         gamesContainer.appendChild(card);
       });
     }
@@ -362,7 +351,7 @@
         const rounds = Array.isArray(phase.rounds) ? phase.rounds.slice() : [];
 
         if (!rounds.length) {
-          gamesContainer.innerHTML = '<div class="message">Keine Spieltage gefunden.</div>';
+          gamesContainer.innerHTML = '<div class="message">Keine Spiele gefunden.</div>';
           return;
         }
 
