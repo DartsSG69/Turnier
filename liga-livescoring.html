@@ -97,10 +97,38 @@
     }
 
     .top-nav {
+      position: relative;
       display: flex;
       justify-content: flex-start;
+      align-items: center;
       margin-top: 6px;
       margin-bottom: 6px;
+      min-height: 42px;
+    }
+
+    .match-header {
+      position: absolute;
+      left: 50%;
+      top: 50%;
+      transform: translate(-50%, -50%);
+      max-width: min(980px, 62vw);
+      padding: 8px 18px;
+      border-radius: 999px;
+      text-align: center;
+      color: #ffffff;
+      font-size: clamp(1rem, 1.8vw, 1.65rem);
+      font-weight: 900;
+      line-height: 1.1;
+      background: rgba(8, 18, 46, 0.72);
+      border: 1px solid rgba(134, 170, 255, 0.22);
+      backdrop-filter: blur(10px);
+      box-shadow:
+        0 8px 20px rgba(0, 0, 0, 0.22),
+        inset 0 1px 0 rgba(255,255,255,0.05);
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+      pointer-events: none;
     }
 
     .back-link {
@@ -425,6 +453,23 @@
     }
 
     @media (max-width: 900px) {
+      .top-nav {
+        display: flex;
+        align-items: flex-start;
+        min-height: 96px;
+      }
+
+      .match-header {
+        position: absolute;
+        left: 50%;
+        top: 54px;
+        transform: translateX(-50%);
+        width: 100%;
+        max-width: 100%;
+        white-space: normal;
+        border-radius: 18px;
+      }
+
       .boards {
         grid-template-columns: 1fr;
       }
@@ -450,6 +495,7 @@
     <div class="shell">
 <div class="top-nav">
         <a class="back-link" href="sixty9darters3.html">← Zurück</a>
+        <div class="match-header" id="matchHeader">Spiel wird geladen …</div>
       </div>
 
       <div class="boards" id="boards"></div>
@@ -459,10 +505,12 @@
   <script>
     const params = new URLSearchParams(window.location.search);
     const MATCH_ID = params.get("matchId");
+    const MATCH_TITLE = params.get("matchTitle");
     const EVENT_URL = MATCH_ID ? `/api/liga-boards?matchId=${encodeURIComponent(MATCH_ID)}` : null;
     const REFRESH_MS = 1000;
 
     const boardsEl = document.getElementById("boards");
+    const matchHeaderEl = document.getElementById("matchHeader");
     const legDartsState = new Map();
     let renderCycle = 0;
     let lastRenderedPayload = "";
@@ -737,7 +785,31 @@
       `;
     }
 
+    function updateMatchHeader(matches) {
+      if (!matchHeaderEl) return;
+
+      if (MATCH_TITLE) {
+        matchHeaderEl.textContent = MATCH_TITLE;
+        return;
+      }
+
+      if (!Array.isArray(matches) || matches.length === 0) {
+        matchHeaderEl.textContent = "Kein Spiel gefunden";
+        return;
+      }
+
+      const match = matches[0] || {};
+      const p1 = match.matchPlayers?.[0] || {};
+      const p2 = match.matchPlayers?.[1] || {};
+
+      const name1 = p1.playerName || p1.displayName || "Heim";
+      const name2 = p2.playerName || p2.displayName || "Gast";
+
+      matchHeaderEl.textContent = `${name1} - ${name2}`;
+    }
+
     function renderBoards(matches) {
+      updateMatchHeader(matches);
       renderCycle += 1;
       if (!Array.isArray(matches) || matches.length === 0) {
         boardsEl.innerHTML = `
@@ -782,6 +854,7 @@
 
     async function loadBoards() {
       if (!EVENT_URL) {
+        if (matchHeaderEl) matchHeaderEl.textContent = "Keine Spiel-ID übergeben";
         boardsEl.innerHTML = `
           <div class="empty">Keine Spiel-ID übergeben.</div>
         `;
@@ -806,6 +879,7 @@
           hasLoadedOnce = true;
         }
       } catch (error) {
+        if (matchHeaderEl) matchHeaderEl.textContent = "Fehler beim Laden";
         boardsEl.innerHTML = `
           <div class="empty">Fehler beim Laden der Live-Daten.<br>${error.message}</div>
         `;
