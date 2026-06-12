@@ -1,0 +1,424 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Sixty9Darters 3 - Liga Livescoring</title>
+  <style>
+    :root {
+      --bg: #050b22;
+      --text: #ffffff;
+      --muted: rgba(255, 255, 255, 0.72);
+      --overlay-dark: rgba(3, 8, 24, 0.34);
+      --overlay-blue: rgba(21, 49, 130, 0.16);
+      --button-bg: rgba(8, 18, 46, 0.82);
+      --button-border: rgba(134, 170, 255, 0.24);
+      --button-hover: rgba(33, 72, 190, 0.88);
+      --panel-bg: rgba(5, 12, 34, 0.68);
+      --row-bg: rgba(8, 18, 46, 0.76);
+      --row-bg-soft: rgba(8, 18, 46, 0.52);
+      --accent: rgba(134, 170, 255, 0.62);
+      --error-bg: rgba(140, 20, 20, 0.40);
+      --error-border: rgba(255, 120, 120, 0.35);
+    }
+
+    * { box-sizing: border-box; }
+
+    html, body {
+      margin: 0;
+      width: 100%;
+      min-height: 100%;
+      font-family: Arial, Helvetica, sans-serif;
+      background: var(--bg);
+    }
+
+    body {
+      min-height: 100vh;
+      color: var(--text);
+    }
+
+    .hero {
+      min-height: 100vh;
+      background-image:
+        linear-gradient(180deg, var(--overlay-dark), rgba(4, 10, 30, 0.48)),
+        radial-gradient(circle at center, transparent 0%, rgba(2, 7, 22, 0.14) 55%, rgba(2, 7, 22, 0.38) 100%),
+        linear-gradient(135deg, var(--overlay-blue), transparent 45%),
+        url("sg_flight_night_hintergrundbild.png");
+      background-size: cover;
+      background-position: center center;
+      background-repeat: no-repeat;
+      padding: 28px 22px 40px;
+      display: flex;
+      align-items: flex-end;
+      justify-content: center;
+    }
+
+    .shell {
+      width: min(1180px, 100%);
+      min-height: calc(100vh - 80px);
+      display: grid;
+      align-items: end;
+    }
+
+    .content { width: 100%; padding-bottom: 20px; }
+
+    .header,
+    .panel {
+      width: 100%;
+      border-radius: 22px;
+      background: var(--panel-bg);
+      border: 1px solid var(--button-border);
+      backdrop-filter: blur(12px);
+      box-shadow:
+        0 18px 40px rgba(0, 0, 0, 0.28),
+        inset 0 1px 0 rgba(255,255,255,0.05);
+    }
+
+    .header {
+      margin-bottom: 18px;
+      padding: 18px 22px;
+    }
+
+    .back-link {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      margin-bottom: 14px;
+      color: var(--text);
+      text-decoration: none;
+      font-size: 0.95rem;
+      font-weight: 700;
+      opacity: 0.86;
+    }
+
+    .back-link:hover { opacity: 1; }
+
+    h1 {
+      margin: 0;
+      font-size: clamp(1.8rem, 3vw, 3rem);
+      line-height: 1.1;
+    }
+
+    .subtitle {
+      margin: 10px 0 0;
+      color: var(--muted);
+      font-size: clamp(0.95rem, 1.4vw, 1.1rem);
+    }
+
+    .panel { padding: 18px; }
+
+    .match-head {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
+      align-items: center;
+      gap: 16px;
+      margin-bottom: 16px;
+      padding: 18px;
+      border-radius: 18px;
+      background: var(--row-bg);
+      border: 1px solid var(--button-border);
+    }
+
+    .team {
+      min-width: 0;
+      font-size: clamp(1.1rem, 2vw, 1.7rem);
+      font-weight: 900;
+      overflow-wrap: anywhere;
+    }
+
+    .team.home { text-align: right; }
+    .team.away { text-align: left; }
+
+    .score {
+      min-width: 90px;
+      padding: 10px 14px;
+      border-radius: 999px;
+      text-align: center;
+      font-size: clamp(1.15rem, 2.2vw, 1.8rem);
+      font-weight: 900;
+      background: var(--row-bg-soft);
+      border: 1px solid var(--accent);
+      white-space: nowrap;
+    }
+
+    .boards {
+      display: grid;
+      gap: 12px;
+    }
+
+    .board-card {
+      padding: 14px 16px;
+      border-radius: 16px;
+      background: var(--row-bg);
+      border: 1px solid var(--button-border);
+    }
+
+    .board-title {
+      margin: 0 0 10px;
+      font-weight: 900;
+      font-size: 1.05rem;
+      color: var(--text);
+    }
+
+    .board-grid {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
+      align-items: center;
+      gap: 12px;
+    }
+
+    .player {
+      min-width: 0;
+      overflow-wrap: anywhere;
+      color: var(--text);
+      font-weight: 800;
+    }
+
+    .player.left { text-align: right; }
+    .player.right { text-align: left; }
+
+    .mini-score {
+      min-width: 58px;
+      padding: 7px 10px;
+      border-radius: 999px;
+      text-align: center;
+      background: var(--row-bg-soft);
+      border: 1px solid var(--accent);
+      font-weight: 900;
+      white-space: nowrap;
+    }
+
+    .details {
+      margin-top: 10px;
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(130px, 1fr));
+      gap: 8px;
+      color: var(--muted);
+      font-size: 0.92rem;
+    }
+
+    .message {
+      padding: 20px 22px;
+      border-radius: 18px;
+      background: var(--row-bg);
+      border: 1px solid var(--button-border);
+      color: var(--text);
+    }
+
+    .message.error {
+      background: var(--error-bg);
+      border-color: var(--error-border);
+    }
+
+    pre.raw {
+      margin: 14px 0 0;
+      max-height: 420px;
+      overflow: auto;
+      padding: 14px;
+      border-radius: 14px;
+      background: rgba(0, 0, 0, 0.30);
+      border: 1px solid var(--button-border);
+      color: var(--muted);
+      font-size: 0.82rem;
+      white-space: pre-wrap;
+    }
+
+    @media (max-width: 760px) {
+      .hero { padding: 20px 12px 28px; }
+      .header, .panel { border-radius: 18px; padding: 16px; }
+      .match-head,
+      .board-grid {
+        grid-template-columns: 1fr;
+        text-align: center;
+      }
+      .team.home,
+      .team.away,
+      .player.left,
+      .player.right { text-align: center; }
+      .score,
+      .mini-score { justify-self: center; }
+    }
+  </style>
+</head>
+<body>
+  <section class="hero" aria-label="Liga Livescoring">
+    <main class="shell">
+      <div class="content">
+        <header class="header">
+          <a class="back-link" href="sixty9darters3.html" aria-label="Zurück zur Spieleliste">← Zurück</a>
+          <h1>Liga Livescoring</h1>
+          <p class="subtitle" id="subtitle">Live-Daten werden geladen …</p>
+        </header>
+
+        <section class="panel" id="output" aria-live="polite">
+          <div class="message">Livescoring wird geladen …</div>
+        </section>
+      </div>
+    </main>
+  </section>
+
+  <script>
+    const params = new URLSearchParams(window.location.search);
+    const matchId = params.get('matchId') || params.get('id');
+    const output = document.getElementById('output');
+    const subtitle = document.getElementById('subtitle');
+    const REFRESH_MS = 15000;
+
+    function escapeHtml(value) {
+      return String(value ?? '')
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#039;');
+    }
+
+    function valueFrom(obj, keys, fallback = '') {
+      if (!obj || typeof obj !== 'object') return fallback;
+      for (const key of keys) {
+        const value = obj[key];
+        if (value !== undefined && value !== null && value !== '') return value;
+      }
+      return fallback;
+    }
+
+    function getPayload(json) {
+      if (Array.isArray(json?.data)) return json.data;
+      if (Array.isArray(json?.matches)) return json.matches;
+      if (Array.isArray(json?.boards)) return json.boards;
+      if (Array.isArray(json)) return json;
+      if (json?.data && typeof json.data === 'object') return json.data;
+      return json;
+    }
+
+    function findArrayByKeys(obj, wantedKeys) {
+      if (!obj || typeof obj !== 'object') return [];
+      if (Array.isArray(obj)) return obj;
+      for (const value of Object.values(obj)) {
+        if (Array.isArray(value) && value.some(item => item && typeof item === 'object' && wantedKeys.some(key => key in item))) {
+          return value;
+        }
+      }
+      for (const value of Object.values(obj)) {
+        if (value && typeof value === 'object') {
+          const found = findArrayByKeys(value, wantedKeys);
+          if (found.length) return found;
+        }
+      }
+      return [];
+    }
+
+    function getTeamName(side) {
+      if (!side) return '';
+      if (typeof side === 'string') return side;
+      return valueFrom(side, ['displayName', 'name', 'teamName', 'participantName', 'shortName'], '');
+    }
+
+    function renderMatchHeader(payload) {
+      const match = Array.isArray(payload) ? payload[0] : payload;
+      const home = getTeamName(match?.participantHome || match?.home || match?.teamHome || match?.homeTeam) || valueFrom(match, ['homeName', 'participantHomeName', 'teamHomeName'], 'Heim');
+      const away = getTeamName(match?.participantGuest || match?.away || match?.teamAway || match?.awayTeam || match?.guest) || valueFrom(match, ['awayName', 'guestName', 'participantGuestName', 'teamAwayName'], 'Gast');
+      const setsHome = valueFrom(match, ['setsHome', 'homeSets', 'scoreHome', 'pointsHome'], '');
+      const setsAway = valueFrom(match, ['setsAway', 'awaySets', 'scoreAway', 'pointsAway'], '');
+      const score = setsHome !== '' && setsAway !== '' ? `${setsHome}:${setsAway}` : 'vs';
+
+      return `
+        <div class="match-head">
+          <div class="team home">${escapeHtml(home)}</div>
+          <div class="score">${escapeHtml(score)}</div>
+          <div class="team away">${escapeHtml(away)}</div>
+        </div>
+      `;
+    }
+
+    function renderBoard(board, index) {
+      const leftPlayer = valueFrom(board, ['playerHomeName', 'homePlayerName', 'player1Name', 'playerHome', 'homeName', 'nameHome'], 'Spieler Heim');
+      const rightPlayer = valueFrom(board, ['playerAwayName', 'awayPlayerName', 'player2Name', 'playerGuest', 'awayName', 'guestName', 'nameAway'], 'Spieler Gast');
+      const leftScore = valueFrom(board, ['setsHome', 'legsHome', 'scoreHome', 'homeScore', 'pointsHome'], '');
+      const rightScore = valueFrom(board, ['setsAway', 'legsAway', 'scoreAway', 'awayScore', 'pointsAway'], '');
+      const score = leftScore !== '' && rightScore !== '' ? `${leftScore}:${rightScore}` : 'vs';
+      const title = valueFrom(board, ['boardName', 'name', 'title', 'gameName'], `Board ${index + 1}`);
+
+      const details = [
+        ['Status', valueFrom(board, ['status', 'statusCd'], '')],
+        ['Legs', valueFrom(board, ['legs', 'leg'], '')],
+        ['Aufnahme', valueFrom(board, ['round', 'turn', 'visit'], '')],
+        ['Rest', valueFrom(board, ['remaining', 'rest', 'pointsLeft'], '')]
+      ].filter(([, value]) => value !== '');
+
+      return `
+        <article class="board-card">
+          <h2 class="board-title">${escapeHtml(title)}</h2>
+          <div class="board-grid">
+            <div class="player left">${escapeHtml(leftPlayer)}</div>
+            <div class="mini-score">${escapeHtml(score)}</div>
+            <div class="player right">${escapeHtml(rightPlayer)}</div>
+          </div>
+          ${details.length ? `<div class="details">${details.map(([label, value]) => `<div><strong>${escapeHtml(label)}:</strong> ${escapeHtml(value)}</div>`).join('')}</div>` : ''}
+        </article>
+      `;
+    }
+
+    function render(json) {
+      const payload = getPayload(json);
+      const boards = findArrayByKeys(payload, ['playerHomeName', 'homePlayerName', 'player1Name', 'scoreHome', 'legsHome', 'pointsHome']);
+
+      subtitle.textContent = `Match-ID ${matchId}`;
+
+      if (json?.error && (!Array.isArray(json.data) || json.data.length === 0)) {
+        output.innerHTML = `<div class="message">${escapeHtml(json.error)}</div>`;
+        return;
+      }
+
+      if (!boards.length) {
+        output.innerHTML = `
+          ${renderMatchHeader(payload)}
+          <div class="message">Für dieses Spiel wurden keine Board-Daten gefunden.</div>
+          <pre class="raw">${escapeHtml(JSON.stringify(json, null, 2))}</pre>
+        `;
+        return;
+      }
+
+      output.innerHTML = `
+        ${renderMatchHeader(payload)}
+        <div class="boards">
+          ${boards.map(renderBoard).join('')}
+        </div>
+      `;
+    }
+
+    async function loadLivescoring() {
+      if (!/^\d+$/.test(String(matchId || ''))) {
+        output.innerHTML = '<div class="message error">Keine gültige Match-ID übergeben.</div>';
+        subtitle.textContent = 'Fehlende Match-ID';
+        return;
+      }
+
+      try {
+        const response = await fetch(`/api/liga-boards?matchId=${encodeURIComponent(matchId)}&t=${Date.now()}`, { cache: 'no-store' });
+        const text = await response.text();
+        let json;
+
+        try {
+          json = JSON.parse(text);
+        } catch (error) {
+          throw new Error(`Antwort ist kein JSON: ${text.slice(0, 200)}`);
+        }
+
+        render(json);
+      } catch (error) {
+        console.error('Livescoring konnte nicht geladen werden:', error);
+        output.innerHTML = `
+          <div class="message error">
+            Livescoring konnte nicht geladen werden. Bitte später erneut versuchen.<br>
+            ${escapeHtml(error.message)}
+          </div>
+        `;
+      }
+    }
+
+    loadLivescoring();
+    window.setInterval(loadLivescoring, REFRESH_MS);
+  </script>
+</body>
+</html>
