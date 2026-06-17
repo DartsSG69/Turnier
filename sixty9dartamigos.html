@@ -246,6 +246,7 @@
         <header class="header">
           <a class="back-link" href="index.html" aria-label="Zurück zur Startseite">← Zurück</a>
           <h1>Sixty9Dartamigos</h1>
+          <p class="subtitle">Alle Spiele der Sixty 9 Dartamigos</p>
         </header>
 
         <div id="games" class="game-list" aria-live="polite">
@@ -293,7 +294,7 @@
       return 'vs';
     }
 
-    function getMatchUrl(match) {
+    function getMatchUrl(match, roundId) {
       const homeName = getParticipantName(match.participantHome) || 'spielfrei';
       const awayName = getParticipantName(match.participantGuest) || 'spielfrei';
       const score = getScore(match);
@@ -304,7 +305,8 @@
 
       const params = new URLSearchParams({
         matchId: String(match.id),
-        matchHeader: header
+        matchHeader: header,
+        roundId: String(roundId)
       });
 
       return `liga-livescoring.html?${params.toString()}`;
@@ -326,7 +328,7 @@
 
         const card = document.createElement('a');
         card.className = 'game-card';
-        card.href = getMatchUrl(match);
+        card.href = getMatchUrl(match, round.id);
 
         const homeEl = document.createElement('span');
         homeEl.className = `team home${homeIsOwnTeam ? ' own' : ''}`;

@@ -500,7 +500,7 @@
   <section class="hero" aria-label="Kalle's Flight Night Live Boards">
     <div class="shell">
 <div class="top-nav">
-        <a class="back-link" href="index.html">← Zurück</a>
+        <a class="back-link" href="sixty9darters3.html">← Zurück</a>
         <div class="match-header" id="matchHeader">Spiel wird geladen …</div>
       </div>
 
@@ -511,6 +511,7 @@
   <script>
     const params = new URLSearchParams(window.location.search);
     const MATCH_ID = params.get("matchId");
+    const ROUND_ID = params.get("roundId");
     const MATCH_HEADER = params.get("matchHeader");
     const MATCH_TITLE = params.get("matchTitle");
     const MATCH_RESULT = params.get("matchResult");
@@ -818,39 +819,105 @@
       matchHeaderEl.innerHTML = `${escapeHtml(before)}<span class="match-result-highlight">${escapeHtml(result)}</span>${escapeHtml(after)}`;
     }
 
-    function updateMatchHeader(matches) {
+    function getLeagueFrontendConfigFromReferrer() {
+      const ref = document.referrer || "";
+      const path = ref.split("/").pop() || "";
+
+      if (path.includes("sixty9darters3")) {
+        return { backendNo: 4, eventId: 12059, phaseId: 19982 };
+      }
+
+      return { backendNo: 4, eventId: 12017, phaseId: 19925 };
+    }
+
+    function getRoundDataUrl() {
+      if (!ROUND_ID) return null;
+
+      const config = getLeagueFrontendConfigFromReferrer();
+      return `https://backend${config.backendNo}.3k-darts.com/2k-backend${config.backendNo}/api/v1/frontend/event/${config.eventId}/phase/${config.phaseId}/round/${ROUND_ID}`;
+    }
+
+    function extractRoundMatches(data) {
+      if (Array.isArray(data)) return data;
+      if (Array.isArray(data?.matches)) return data.matches;
+      if (Array.isArray(data?.data)) return data.data;
+      if (Array.isArray(data?.items)) return data.items;
+      if (Array.isArray(data?.games)) return data.games;
+
+      const nested = [];
+      const collect = (value) => {
+        if (!value || typeof value !== "object") return;
+        if (Array.isArray(value.matches)) nested.push(...value.matches);
+        if (Array.isArray(value.games)) nested.push(...value.games);
+        if (Array.isArray(value.items)) nested.push(...value.items);
+        if (Array.isArray(value.groups)) value.groups.forEach(collect);
+        if (Array.isArray(value.rounds)) value.rounds.forEach(collect);
+      };
+      collect(data);
+      return nested;
+    }
+
+    function getFrontendMatchResult(match) {
+      const home = match?.legsHome;
+      const away = match?.legsAway;
+
+      if (home !== undefined && home !== null && away !== undefined && away !== null) {
+        return `${home}:${away}`;
+      }
+
+      const setsHome = match?.setsHome;
+      const setsAway = match?.setsAway;
+
+      if (setsHome !== undefined && setsHome !== null && setsAway !== undefined && setsAway !== null) {
+        return `${setsHome}:${setsAway}`;
+      }
+
+      return "";
+    }
+
+    function stripResultFromHeader(header) {
+      return String(header || "")
+        .replace(/\s+\d+\s*:\s*\d+\s+/g, " - ")
+        .replace(/\s+\d+\s*:\s*\d+\s*$/g, "")
+        .replace(/\s*-\s*-\s*/g, " - ")
+        .replace(/\s{2,}/g, " ")
+        .trim();
+    }
+
+    async function loadLiveHeaderFromRound() {
       if (!matchHeaderEl) return;
 
-      if (MATCH_HEADER) {
-        renderMatchHeaderText(MATCH_HEADER);
+      const baseTitle = stripResultFromHeader(MATCH_HEADER || MATCH_TITLE || "Spiel");
+      const roundUrl = getRoundDataUrl();
+
+      if (!roundUrl || !MATCH_ID) {
+        renderMatchHeaderText(baseTitle);
         return;
       }
 
-      if (MATCH_TITLE && MATCH_RESULT) {
-        renderMatchHeaderText(`${MATCH_TITLE}  ${MATCH_RESULT}`);
-        return;
+      try {
+        const separator = roundUrl.includes("?") ? "&" : "?";
+        const response = await fetch(`${roundUrl}${separator}t=${Date.now()}`, { cache: "no-store" });
+
+        if (!response.ok) throw new Error(`HTTP ${response.status}`);
+
+        const data = await response.json();
+        const match = extractRoundMatches(data).find((item) => String(item?.id) === String(MATCH_ID));
+        const result = getFrontendMatchResult(match);
+
+        if (result) {
+          renderMatchHeaderText(`${baseTitle}  ${result}`);
+        } else {
+          renderMatchHeaderText(baseTitle);
+        }
+      } catch (error) {
+        console.warn("Live-Ergebnis konnte nicht geladen werden:", error);
+        renderMatchHeaderText(baseTitle);
       }
+    }
 
-      if (MATCH_TITLE) {
-        renderMatchHeaderText(MATCH_TITLE);
-        return;
-      }
-
-      if (!Array.isArray(matches) || matches.length === 0) {
-        matchHeaderEl.textContent = "Kein Spiel gefunden";
-        return;
-      }
-
-      const match = matches[0] || {};
-      const p1 = match.matchPlayers?.[0] || {};
-      const p2 = match.matchPlayers?.[1] || {};
-
-      const name1 = p1.playerName || p1.displayName || "Heim";
-      const name2 = p2.playerName || p2.displayName || "Gast";
-      const legs1 = p1.legs ?? 0;
-      const legs2 = p2.legs ?? 0;
-
-      renderMatchHeaderText(`${name1} ${legs1}:${legs2} ${name2}`);
+    function updateMatchHeader(matches) {
+      loadLiveHeaderFromRound();
     }
 
     function renderBoards(matches) {
@@ -932,7 +999,9 @@
     }
 
     loadBoards();
+    loadLiveHeaderFromRound();
     setInterval(loadBoards, REFRESH_MS);
+    setInterval(loadLiveHeaderFromRound, REFRESH_MS);
   </script>
 </body>
 </html>
