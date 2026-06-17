@@ -858,18 +858,33 @@
     }
 
     function getFrontendMatchResult(match) {
-      const home = match?.legsHome;
-      const away = match?.legsAway;
-
-      if (home !== undefined && home !== null && away !== undefined && away !== null) {
-        return `${home}:${away}`;
-      }
-
+      /*
+        setsHome / setsAway = Live-Spielstand der Begegnung
+        legsHome / legsAway = Legs und wird hier bewusst nicht verwendet
+      */
       const setsHome = match?.setsHome;
       const setsAway = match?.setsAway;
 
       if (setsHome !== undefined && setsHome !== null && setsAway !== undefined && setsAway !== null) {
         return `${setsHome}:${setsAway}`;
+      }
+
+      const gamesHome =
+        match?.gamesHome ??
+        match?.matchesHome ??
+        match?.scoreHome ??
+        match?.participantHomeResult ??
+        match?.resultHome;
+
+      const gamesAway =
+        match?.gamesAway ??
+        match?.matchesAway ??
+        match?.scoreAway ??
+        match?.participantGuestResult ??
+        match?.resultAway;
+
+      if (gamesHome !== undefined && gamesHome !== null && gamesAway !== undefined && gamesAway !== null) {
+        return `${gamesHome}:${gamesAway}`;
       }
 
       return "";
